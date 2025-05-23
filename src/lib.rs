@@ -67,7 +67,10 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
                             self.index_ranges.push((*index, index_difference - 1));
                         }
                     } else {
-                        continue; // skip duplicate entries for the same index ; TODO panic instead
+                        #[cfg(feature = "panic")]
+                        panic!("Duplicate index `{}`", *index);
+                        #[cfg(not(feature = "panic"))]
+                        continue; // skip duplicate entries for the same index
                     }
                 } else if index > &0 {
                     self.index_ranges.push((*index, *index));
@@ -91,6 +94,9 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
         for (index, value) in &self.entries {
             if let Some(last_added_entry_index) = self.last_added_entry_index {
                 if *index == last_added_entry_index {
+                    #[cfg(feature = "panic")]
+                    panic!("Duplicate index `{}`", *index);
+                    #[cfg(not(feature = "panic"))]
                     continue; // skip duplicate entries for the same index
                 }
             }
