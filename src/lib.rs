@@ -13,7 +13,7 @@ pub struct NciBaseArray<T, const R: usize, const N: usize> {
 
 #[derive(Debug)]
 pub struct NciBaseArrayGenerator<T> {
-    entries_added_strictly_increasing: bool,
+    entries_ordered_monotonically_increasing: bool,
     last_added_entry_index: Option<usize>,
     index_ranges: Vec<(usize, usize)>,
     entries: Vec<(usize, T)>,
@@ -22,7 +22,7 @@ pub struct NciBaseArrayGenerator<T> {
 impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
     pub fn new() -> Self {
         Self {
-            entries_added_strictly_increasing: true,
+            entries_ordered_monotonically_increasing: true,
             last_added_entry_index: None,
             index_ranges: vec![],
             entries: vec![],
@@ -30,7 +30,7 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
     }
 
     pub fn entry(&mut self, index: usize, value: T) {
-        if self.entries_added_strictly_increasing {
+        if self.entries_ordered_monotonically_increasing {
             if let Some(last_added_entry_index) = self.last_added_entry_index {
                 if index > last_added_entry_index {
                     let index_difference = index - last_added_entry_index;
@@ -38,14 +38,14 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
                         self.index_ranges.push((index, index_difference - 1));
                     }
                 } else {
-                    self.entries_added_strictly_increasing = false;
+                    self.entries_ordered_monotonically_increasing = false;
                 }
             } else if index > 0 {
                 self.index_ranges.push((index, index));
             }
 
             self.last_added_entry_index = Some(index);
-            if !self.entries_added_strictly_increasing {
+            if !self.entries_ordered_monotonically_increasing {
                 self.last_added_entry_index = None;
                 self.index_ranges = vec![];
             }
@@ -55,7 +55,7 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
     }
 
     pub fn build(&mut self, prefix: &str, suffix: &str) -> impl std::fmt::Display {
-        if !self.entries_added_strictly_increasing {
+        if !self.entries_ordered_monotonically_increasing {
             self.entries
                 .sort_by(|(first_index, _), (second_index, _)| first_index.cmp(second_index));
 
@@ -78,6 +78,8 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
 
                 self.last_added_entry_index = Some(*index);
             }
+
+            self.entries_ordered_monotonically_increasing = true;
         }
 
         let mut main_output = "{\n".to_string();
