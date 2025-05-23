@@ -1,7 +1,26 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound = "T: serde::Serialize + serde::de::DeserializeOwned")
+)]
+pub struct NciBaseArray<T, const R: usize, const N: usize> {
+    #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
+    index_ranges: [(usize, usize); R],
+    #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
+    data: [T; N],
+}
+
+#[derive(Debug, PartialEq)]
 pub struct NciArray<'a, T> {
     index_ranges: &'a [(usize, usize)],
     data: &'a [T],
+}
+
+impl<'a, T> NciArray<'a, T> {
+    pub fn new(index_ranges: &'a [(usize, usize)], data: &'a [T]) -> Self {
+        Self { index_ranges, data }
+    }
 }
 
 impl<'a, T> std::ops::Index<usize> for NciArray<'a, T> {
@@ -104,15 +123,20 @@ impl<'a, T> NciArray<'a, T> {
 mod tests {
     use super::*;
 
+    const BASE_ARRAY_1: NciBaseArray<i32, 2, 6> = NciBaseArray {
+        index_ranges: [(10, 7), (100, 88)],
+        data: [0, 1, 2, 10, 11, 100],
+    };
+    const BASE_ARRAY_2: NciBaseArray<i32, 3, 6> = NciBaseArray {
+        index_ranges: [(100, 100), (200, 98), (500, 299)],
+        data: [100, 101, 200, 500, 501, 502],
+    };
+
     #[test]
     fn basic_array_test_1() {
-        let data = &[0, 1, 2, 10, 11, 100];
-        let arr = NciArray {
-            index_ranges: &[(10, 7), (100, 88)],
-            data: data,
-        };
+        let arr = NciArray::new(&BASE_ARRAY_1.index_ranges, &BASE_ARRAY_1.data);
         let data_as_slice = arr.data().as_slice();
-        assert_eq!(data_as_slice, data);
+        assert_eq!(data_as_slice, BASE_ARRAY_1.data);
 
         assert_eq!(arr.get(0), Some(&0));
         assert_eq!(arr.get(1), Some(&1));
@@ -130,13 +154,9 @@ mod tests {
     }
     #[test]
     fn basic_array_test_2() {
-        let data = &[100, 101, 200, 500, 501, 502];
-        let arr = NciArray {
-            index_ranges: &[(100, 100), (200, 98), (500, 299)],
-            data: data,
-        };
+        let arr = NciArray::new(&BASE_ARRAY_2.index_ranges, &BASE_ARRAY_2.data);
         let data_as_slice = arr.data().as_slice();
-        assert_eq!(data_as_slice, data);
+        assert_eq!(data_as_slice, BASE_ARRAY_2.data);
 
         assert_eq!(arr.get(0), None);
         assert_eq!(arr.get(1), None);
@@ -164,19 +184,15 @@ mod tests {
 
     #[test]
     fn basic_array_iterator_test_1() {
-        let index_ranges =  &[(10, 7), (100, 88)];
-        let data = &[0, 1, 2, 10, 11, 100];
-        let arr = NciArray {
-            index_ranges,
-            data: data,
-        };
+        let arr = NciArray::new(&BASE_ARRAY_1.index_ranges, &BASE_ARRAY_1.data);
 
         let mut entries = arr.entries();
         let mut indices = arr.indices();
         let mut data = arr.data();
 
-        while let (Some(entry), Some(index), Some(value)) = (entries.next(), indices.next(), data.next()) {
-            dbg!(&entry, index, value);
+        while let (Some(entry), Some(index), Some(value)) =
+            (entries.next(), indices.next(), data.next())
+        {
             assert_eq!(entry.0, index);
             assert_eq!(entry.1, value);
             assert_eq!(entry.0, *entry.1 as usize); // not generally true
@@ -189,19 +205,15 @@ mod tests {
 
     #[test]
     fn basic_array_iterator_test_2() {
-        let index_ranges =  &[(100, 100), (200, 98), (500, 299)];
-        let data = &[100, 101, 200, 500, 501, 502];
-        let arr = NciArray {
-            index_ranges,
-            data: data,
-        };
+        let arr = NciArray::new(&BASE_ARRAY_2.index_ranges, &BASE_ARRAY_2.data);
 
         let mut entries = arr.entries();
         let mut indices = arr.indices();
         let mut data = arr.data();
 
-        while let (Some(entry), Some(index), Some(value)) = (entries.next(), indices.next(), data.next()) {
-            dbg!(&entry, index, value);
+        while let (Some(entry), Some(index), Some(value)) =
+            (entries.next(), indices.next(), data.next())
+        {
             assert_eq!(entry.0, index);
             assert_eq!(entry.1, value);
             assert_eq!(entry.0, *entry.1 as usize); // not generally true
@@ -210,5 +222,23 @@ mod tests {
         assert_eq!(entries.next(), None);
         assert_eq!(indices.next(), None);
         assert_eq!(data.next(), None);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_test_1() {
+        let serialized = ron::to_string(&BASE_ARRAY_1).unwrap();
+        let deserialized: Result<NciBaseArray<i32, 2, 6>, ron::de::SpannedError> =
+            ron::from_str(&serialized);
+        assert_eq!(BASE_ARRAY_1, deserialized.unwrap())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_test_2() {
+        let serialized = ron::to_string(&BASE_ARRAY_2).unwrap();
+        let deserialized: Result<NciBaseArray<i32, 3, 6>, ron::de::SpannedError> =
+            ron::from_str(&serialized);
+        assert_eq!(BASE_ARRAY_2, deserialized.unwrap())
     }
 }
