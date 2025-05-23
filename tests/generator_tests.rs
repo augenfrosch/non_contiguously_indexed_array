@@ -4,7 +4,7 @@ use std::{
     path,
 };
 
-use non_contiguously_indexed_array::{NciArray, NciBaseArrayGenerator};
+use non_contiguously_indexed_array::{NciArray, NciArrayDataGenerator};
 
 mod constants;
 use constants::*;
@@ -13,8 +13,8 @@ use constants::*;
 mod generated;
 
 fn generate_test_1_array() {
-    let arr = NciArray::new(&BASE_ARRAY_1.index_ranges, &BASE_ARRAY_1.data);
-    let mut generator = NciBaseArrayGenerator::new();
+    let arr = NciArray::new(&ARRAY_DATA_1.index_ranges, &ARRAY_DATA_1.values);
+    let mut generator = NciArrayDataGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
@@ -27,9 +27,9 @@ fn generate_test_1_array() {
         writer,
         "{}",
         generator.build(
-            "use non_contiguously_indexed_array::NciBaseArray;
+            "use non_contiguously_indexed_array::NciArrayData;
 
-pub const GENERATED_1: NciBaseArray<i32, {R}, {N}> = NciBaseArray",
+pub const GENERATED_1: NciArrayData<i32, {R}, {N}> = NciArrayData",
             ";"
         ),
     )
@@ -37,8 +37,8 @@ pub const GENERATED_1: NciBaseArray<i32, {R}, {N}> = NciBaseArray",
 }
 
 fn generate_test_2_array() {
-    let arr = NciArray::new(&BASE_ARRAY_2.index_ranges, &BASE_ARRAY_2.data);
-    let mut generator = NciBaseArrayGenerator::new();
+    let arr = NciArray::new(&ARRAY_DATA_2.index_ranges, &ARRAY_DATA_2.values);
+    let mut generator = NciArrayDataGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
@@ -50,9 +50,9 @@ fn generate_test_2_array() {
         writer,
         "{}",
         generator.build(
-            "use non_contiguously_indexed_array::NciBaseArray;
+            "use non_contiguously_indexed_array::NciArrayData;
 
-pub const GENERATED_2: NciBaseArray<i32, {R}, {N}> = NciBaseArray",
+pub const GENERATED_2: NciArrayData<i32, {R}, {N}> = NciArrayData",
             ";"
         ),
     )
@@ -60,13 +60,13 @@ pub const GENERATED_2: NciBaseArray<i32, {R}, {N}> = NciBaseArray",
 }
 
 #[test]
-fn base_array_generator_test_1() {
+fn array_data_generator_test_1() {
     generate_test_1_array();
-    assert_eq!(generated::test_generated_1::GENERATED_1, BASE_ARRAY_1);
+    assert_eq!(generated::test_generated_1::GENERATED_1, ARRAY_DATA_1);
 }
 
 #[test]
-fn base_array_generator_test_2() {
+fn array_data_generator_test_2() {
     generate_test_2_array();
-    assert_eq!(generated::test_generated_2::GENERATED_2, BASE_ARRAY_2);
+    assert_eq!(generated::test_generated_2::GENERATED_2, ARRAY_DATA_2);
 }

@@ -4,22 +4,22 @@
     feature = "serde",
     serde(bound = "T: serde::Serialize + serde::de::DeserializeOwned")
 )]
-pub struct NciBaseArray<T, const R: usize, const N: usize> {
+pub struct NciArrayData<T, const R: usize, const N: usize> {
     #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
     pub index_ranges: [(usize, usize); R],
     #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
-    pub data: [T; N],
+    pub values: [T; N],
 }
 
 #[derive(Debug)]
-pub struct NciBaseArrayGenerator<T> {
+pub struct NciArrayDataGenerator<T> {
     entries_ordered_monotonically_increasing: bool,
     last_added_entry_index: Option<usize>,
     index_ranges: Vec<(usize, usize)>,
     entries: Vec<(usize, T)>,
 }
 
-impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
+impl<T: std::fmt::Display> NciArrayDataGenerator<T> {
     pub fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
@@ -90,7 +90,7 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
         }
         main_output.push_str(&format!("\t],\n"));
 
-        main_output.push_str("\tdata: [\n");
+        main_output.push_str("\tvalues: [\n");
         self.last_added_entry_index = None;
         let mut entry_count = 0usize;
         for (index, value) in &self.entries {
@@ -132,12 +132,15 @@ impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
 #[derive(Debug, PartialEq)]
 pub struct NciArray<'a, T> {
     index_ranges: &'a [(usize, usize)],
-    data: &'a [T],
+    values: &'a [T],
 }
 
 impl<'a, T> NciArray<'a, T> {
-    pub fn new(index_ranges: &'a [(usize, usize)], data: &'a [T]) -> Self {
-        Self { index_ranges, data }
+    pub fn new(index_ranges: &'a [(usize, usize)], values: &'a [T]) -> Self {
+        Self {
+            index_ranges,
+            values,
+        }
     }
 }
 
@@ -149,16 +152,16 @@ impl<'a, T> std::ops::Index<usize> for NciArray<'a, T> {
     }
 }
 
-pub struct NciIndexIter<'a> {
+pub struct NciArrayIndexIter<'a> {
     index_ranges: &'a [(usize, usize)],
     next_index_range: usize,
     true_index: usize,
-    data_len: usize,
+    value_count: usize,
     index: usize,
 }
 
-impl<'a> NciIndexIter<'a> {
-    fn new(index_ranges: &'a [(usize, usize)], data_len: usize) -> Self {
+impl<'a> NciArrayIndexIter<'a> {
+    fn new(index_ranges: &'a [(usize, usize)], value_count: usize) -> Self {
         let (initial_index, initial_next_index_range) = index_ranges
             .get(0)
             .map(|(range_start, skipped)| {
@@ -173,17 +176,17 @@ impl<'a> NciIndexIter<'a> {
             index_ranges,
             next_index_range: initial_next_index_range,
             true_index: 0,
-            data_len,
+            value_count,
             index: initial_index,
         }
     }
 }
 
-impl<'a> Iterator for NciIndexIter<'a> {
+impl<'a> Iterator for NciArrayIndexIter<'a> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.true_index < self.data_len {
+        if self.true_index < self.value_count {
             let value = self.index;
 
             self.index += 1;
@@ -203,16 +206,16 @@ impl<'a> Iterator for NciIndexIter<'a> {
 }
 
 impl<'a, T> NciArray<'a, T> {
-    pub fn data(&self) -> core::slice::Iter<'a, T> {
-        self.data.iter()
+    pub fn values(&self) -> core::slice::Iter<'a, T> {
+        self.values.iter()
     }
 
-    pub fn indices(&self) -> NciIndexIter {
-        NciIndexIter::new(self.index_ranges, self.data.len())
+    pub fn indices(&self) -> NciArrayIndexIter {
+        NciArrayIndexIter::new(self.index_ranges, self.values.len())
     }
 
-    pub fn entries(&self) -> std::iter::Zip<NciIndexIter, core::slice::Iter<'a, T>> {
-        self.indices().zip(self.data())
+    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter, core::slice::Iter<'a, T>> {
+        self.indices().zip(self.values())
     }
 
     pub fn get(&self, index: usize) -> Option<&T> {
@@ -231,8 +234,8 @@ impl<'a, T> NciArray<'a, T> {
         let slice_start = index_range_start - index_offset;
         let slice_end = index_range_end
             .map(|index_range_end| index_range_end - index_offset)
-            .unwrap_or(self.data.len());
-        let slice: &[T] = &self.data[slice_start..slice_end];
+            .unwrap_or(self.values.len());
+        let slice: &[T] = &self.values[slice_start..slice_end];
         slice.get(index - index_range_start)
     }
 }

@@ -1,11 +1,11 @@
-use non_contiguously_indexed_array::NciBaseArray;
+use non_contiguously_indexed_array::NciArrayData;
 
-pub const GENERATED_1: NciBaseArray<i32, 2, 6> = NciBaseArray{
+pub const GENERATED_1: NciArrayData<i32, 2, 6> = NciArrayData{
 	index_ranges: [
 		(10, 7),
 		(100, 88),
 	],
-	data: [
+	values: [
 		0,
 		1,
 		2,
