@@ -9,6 +9,7 @@ use non_contiguously_indexed_array::{NciArray, NciBaseArrayGenerator};
 mod constants;
 use constants::*;
 
+#[rustfmt::skip]
 mod generated;
 
 fn generate_test_1_array() {
