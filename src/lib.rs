@@ -11,6 +11,116 @@ pub struct NciBaseArray<T, const R: usize, const N: usize> {
     data: [T; N],
 }
 
+#[derive(Debug)]
+pub struct NciBaseArrayGenerator<T> {
+    entries_added_strictly_increasing: bool,
+    last_added_entry_index: Option<usize>,
+    index_ranges: Vec<(usize, usize)>,
+    entries: Vec<(usize, T)>,
+}
+
+impl<T: std::fmt::Display> NciBaseArrayGenerator<T> {
+    pub fn new() -> Self {
+        Self {
+            entries_added_strictly_increasing: true,
+            last_added_entry_index: None,
+            index_ranges: vec![],
+            entries: vec![],
+        }
+    }
+
+    pub fn entry(&mut self, index: usize, value: T) {
+        if self.entries_added_strictly_increasing {
+            if let Some(last_added_entry_index) = self.last_added_entry_index {
+                if index > last_added_entry_index {
+                    let index_difference = index - last_added_entry_index;
+                    if index_difference != 1 {
+                        self.index_ranges.push((index, index_difference - 1));
+                    }
+                } else {
+                    self.entries_added_strictly_increasing = false;
+                }
+            } else if index > 0 {
+                self.index_ranges.push((index, index));
+            }
+
+            self.last_added_entry_index = Some(index);
+            if !self.entries_added_strictly_increasing {
+                self.last_added_entry_index = None;
+                self.index_ranges = vec![];
+            }
+        }
+
+        self.entries.push((index, value));
+    }
+
+    pub fn build(&mut self, prefix: &str, suffix: &str) -> impl std::fmt::Display {
+        if !self.entries_added_strictly_increasing {
+            self.entries
+                .sort_by(|(first_index, _), (second_index, _)| first_index.cmp(second_index));
+
+            for (index, _) in &self.entries {
+                if let Some(last_added_entry_index) = self.last_added_entry_index {
+                    if *index > last_added_entry_index {
+                        let index_difference = index - last_added_entry_index;
+                        if index_difference != 1 {
+                            self.index_ranges.push((*index, index_difference - 1));
+                        }
+                    } else {
+                        continue; // skip duplicate entries for the same index ; TODO panic instead
+                    }
+                } else if index > &0 {
+                    self.index_ranges.push((*index, *index));
+                }
+
+                self.last_added_entry_index = Some(*index);
+            }
+        }
+
+        let mut main_output = "{\n".to_string();
+
+        main_output.push_str("\tindex_ranges: [\n");
+        for index_range in &self.index_ranges {
+            main_output.push_str(&format!("\t\t{:?},\n", *index_range));
+        }
+        main_output.push_str(&format!("\t],\n"));
+
+        main_output.push_str("\tdata: [\n");
+        self.last_added_entry_index = None;
+        let mut entry_count = 0usize;
+        for (index, value) in &self.entries {
+            if let Some(last_added_entry_index) = self.last_added_entry_index {
+                if *index == last_added_entry_index {
+                    continue; // skip duplicate entries for the same index
+                }
+            }
+
+            self.last_added_entry_index = Some(*index);
+            entry_count += 1;
+            main_output.push_str(&format!("\t\t{:},\n", *value));
+        }
+        main_output.push_str(&format!("\t],\n"));
+        main_output.push_str("}");
+
+        format!(
+            "{}{}{}",
+            prefix
+                .replacen("{R}", &self.index_ranges.len().to_string(), 1)
+                .replacen("{N}", &entry_count.to_string(), 1),
+            main_output,
+            suffix.replacen(
+                "{comment}",
+                &format!(
+                    "// Generated with R={}, N={}",
+                    self.index_ranges.len(),
+                    entry_count
+                ),
+                1
+            ),
+        )
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct NciArray<'a, T> {
     index_ranges: &'a [(usize, usize)],
