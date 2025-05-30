@@ -136,7 +136,7 @@ pub struct NciArray<'a, T> {
 }
 
 impl<'a, T> NciArray<'a, T> {
-    pub fn new(index_ranges: &'a [(usize, usize)], values: &'a [T]) -> Self {
+    pub const fn new(index_ranges: &'a [(usize, usize)], values: &'a [T]) -> Self {
         Self {
             index_ranges,
             values,
