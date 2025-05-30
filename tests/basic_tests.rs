@@ -5,7 +5,11 @@ use constants::*;
 
 #[test]
 fn basic_array_test_1() {
-    let arr = NciArray::new(&ARRAY_DATA_1.index_ranges, &ARRAY_DATA_1.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_1.index_range_starting_indices,
+        &ARRAY_DATA_1.index_range_skip_amounts,
+        &ARRAY_DATA_1.values,
+    );
     let values_as_slice = arr.values().as_slice();
     assert_eq!(values_as_slice, ARRAY_DATA_1.values);
 
@@ -26,7 +30,11 @@ fn basic_array_test_1() {
 
 #[test]
 fn basic_array_test_2() {
-    let arr = NciArray::new(&ARRAY_DATA_2.index_ranges, &ARRAY_DATA_2.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_2.index_range_starting_indices,
+        &ARRAY_DATA_2.index_range_skip_amounts,
+        &ARRAY_DATA_2.values,
+    );
     let values_as_slice = arr.values().as_slice();
     assert_eq!(values_as_slice, ARRAY_DATA_2.values);
 
@@ -56,7 +64,11 @@ fn basic_array_test_2() {
 
 #[test]
 fn basic_array_iterator_test_1() {
-    let arr = NciArray::new(&ARRAY_DATA_1.index_ranges, &ARRAY_DATA_1.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_1.index_range_starting_indices,
+        &ARRAY_DATA_1.index_range_skip_amounts,
+        &ARRAY_DATA_1.values,
+    );
 
     let mut entries = arr.entries();
     let mut indices = arr.indices();
@@ -77,7 +89,11 @@ fn basic_array_iterator_test_1() {
 
 #[test]
 fn basic_array_iterator_test_2() {
-    let arr = NciArray::new(&ARRAY_DATA_2.index_ranges, &ARRAY_DATA_2.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_2.index_range_starting_indices,
+        &ARRAY_DATA_2.index_range_skip_amounts,
+        &ARRAY_DATA_2.values,
+    );
 
     let mut entries = arr.entries();
     let mut indices = arr.indices();
@@ -100,7 +116,7 @@ fn basic_array_iterator_test_2() {
 #[cfg(feature = "serde")]
 fn serde_test_1() {
     let serialized = ron::to_string(&ARRAY_DATA_1).unwrap();
-    let deserialized: Result<NciArrayData<i32, 2, 6>, ron::de::SpannedError> =
+    let deserialized: Result<NciArrayData<i32, 3, 6>, ron::de::SpannedError> =
         ron::from_str(&serialized);
     assert_eq!(ARRAY_DATA_1, deserialized.unwrap());
 }

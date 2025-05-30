@@ -13,7 +13,11 @@ use constants::*;
 mod generated;
 
 fn generate_test_1_array() {
-    let arr = NciArray::new(&ARRAY_DATA_1.index_ranges, &ARRAY_DATA_1.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_1.index_range_starting_indices,
+        &ARRAY_DATA_1.index_range_skip_amounts,
+        &ARRAY_DATA_1.values,
+    );
     let mut generator = NciArrayDataGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
@@ -38,7 +42,11 @@ pub const GENERATED_1: NciArrayData<i32, {R}, {N}> = NciArrayData",
 }
 
 fn generate_test_2_array() {
-    let arr = NciArray::new(&ARRAY_DATA_2.index_ranges, &ARRAY_DATA_2.values);
+    let arr = NciArray::new(
+        &ARRAY_DATA_2.index_range_starting_indices,
+        &ARRAY_DATA_2.index_range_skip_amounts,
+        &ARRAY_DATA_2.values,
+    );
     let mut generator = NciArrayDataGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
