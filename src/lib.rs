@@ -19,7 +19,7 @@ pub struct NciArrayDataGenerator<T> {
     entries: Vec<(usize, T)>,
 }
 
-impl<T: std::fmt::Display> NciArrayDataGenerator<T> {
+impl<T: std::fmt::Display + std::fmt::Debug> NciArrayDataGenerator<T> {
     pub fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
@@ -54,7 +54,7 @@ impl<T: std::fmt::Display> NciArrayDataGenerator<T> {
         self.entries.push((index, value));
     }
 
-    pub fn build(&mut self, prefix: &str, suffix: &str) -> impl std::fmt::Display {
+    pub fn build(&mut self, prefix: &str, suffix: &str, use_debug_format: bool) -> impl std::fmt::Display {
         if !self.entries_ordered_monotonically_increasing {
             self.entries
                 .sort_by(|(first_index, _), (second_index, _)| first_index.cmp(second_index));
@@ -105,7 +105,12 @@ impl<T: std::fmt::Display> NciArrayDataGenerator<T> {
 
             self.last_added_entry_index = Some(*index);
             entry_count += 1;
-            main_output.push_str(&format!("\t\t{:},\n", *value));
+            let entry_str = if !use_debug_format {
+                &format!("\t\t{},\n", *value)
+            } else {
+                &format!("\t\t{:?},\n", *value)
+            };
+            main_output.push_str(entry_str);
         }
         main_output.push_str(&format!("\t],\n"));
         main_output.push_str("}");

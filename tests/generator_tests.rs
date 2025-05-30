@@ -30,7 +30,8 @@ fn generate_test_1_array() {
             "use non_contiguously_indexed_array::NciArrayData;
 
 pub const GENERATED_1: NciArrayData<i32, {R}, {N}> = NciArrayData",
-            ";"
+            ";",
+            false
         ),
     )
     .unwrap();
@@ -53,7 +54,8 @@ fn generate_test_2_array() {
             "use non_contiguously_indexed_array::NciArrayData;
 
 pub const GENERATED_2: NciArrayData<i32, {R}, {N}> = NciArrayData",
-            ";"
+            ";",
+            false
         ),
     )
     .unwrap();
