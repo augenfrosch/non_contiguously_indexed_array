@@ -29,12 +29,9 @@ fn generate_test_1_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "{}",
+        "use non_contiguously_indexed_array::NciArrayData;\n\npub const GENERATED_1: {} = NciArrayData {};",
+        generator.build_type("i32"),
         generator.build(
-            "use non_contiguously_indexed_array::NciArrayData;
-
-pub const GENERATED_1: NciArrayData<i32, {R}, {N}> = NciArrayData",
-            ";",
             false
         ),
     )
@@ -57,12 +54,9 @@ fn generate_test_2_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "{}",
+        "use non_contiguously_indexed_array::NciArrayData;\n\npub const GENERATED_2: {} = NciArrayData {};",
+        generator.build_type("i32"),
         generator.build(
-            "use non_contiguously_indexed_array::NciArrayData;
-
-pub const GENERATED_2: NciArrayData<i32, {R}, {N}> = NciArrayData",
-            ";",
             false
         ),
     )
@@ -79,4 +73,20 @@ fn array_data_generator_test_1() {
 fn array_data_generator_test_2() {
     generate_test_2_array();
     assert_eq!(generated::test_generated_2::GENERATED_2, ARRAY_DATA_2);
+}
+
+#[test]
+#[cfg_attr(feature = "panic", should_panic)]
+fn duplicate_entry_test() {
+    let mut generator = NciArrayDataGenerator::new();
+
+    generator.entry(0, 0);
+    generator.entry(1, 1);
+    generator.entry(1, 100);
+    generator.entry(2, 2);
+
+    let generated = generator.build(false);
+    let string = format!("{generated}");
+    assert_eq!(string.chars().filter(|c| *c == '1').count(), 1);
+    assert_eq!(string.find("100"), None)
 }

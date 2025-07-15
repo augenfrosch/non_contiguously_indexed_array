@@ -14,6 +14,6 @@ serde-big-array = { version = "0.5.1", optional = true }
 ron = { version = "0.8" }
 
 [features]
-default = ["serde", "panic"]
+default = ["serde"]
 panic = []
 serde = ["dep:serde", "dep:serde-big-array"]
