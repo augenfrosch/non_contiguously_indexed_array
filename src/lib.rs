@@ -5,11 +5,11 @@
     serde(bound = "V: serde::Serialize + serde::de::DeserializeOwned")
 )]
 pub struct NciArrayData<V, const R: usize, const N: usize> {
-    #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     pub index_range_starting_indices: [usize; R],
-    #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     pub index_range_skip_amounts: [usize; R],
-    #[cfg_attr(feature = "serde", serde(with = "serde_arrays"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     pub values: [V; N],
 }
 
