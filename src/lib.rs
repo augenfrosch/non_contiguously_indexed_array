@@ -1,5 +1,5 @@
 mod generator;
-pub use generator::NciArrayDataGenerator;
+pub use generator::*;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
