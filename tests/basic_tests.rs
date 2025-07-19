@@ -1,17 +1,13 @@
-use non_contiguously_indexed_array::{NciArray, NciArrayData};
+use non_contiguously_indexed_array::NciArray;
 
 mod constants;
 use constants::*;
 
 #[test]
 fn basic_array_test_1() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_1.index_range_starting_indices,
-        &ARRAY_DATA_1.index_range_skip_amounts,
-        &ARRAY_DATA_1.values,
-    );
+    let arr = ARRAY_1;
     let values_as_slice = arr.values().as_slice();
-    assert_eq!(values_as_slice, ARRAY_DATA_1.values);
+    assert_eq!(values_as_slice, ARRAY_1.values.as_slice());
 
     assert_eq!(arr.get(0), Some(&0));
     assert_eq!(arr.get(1), Some(&1));
@@ -30,13 +26,9 @@ fn basic_array_test_1() {
 
 #[test]
 fn basic_array_test_2() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_2.index_range_starting_indices,
-        &ARRAY_DATA_2.index_range_skip_amounts,
-        &ARRAY_DATA_2.values,
-    );
+    let arr = ARRAY_2;
     let values_as_slice = arr.values().as_slice();
-    assert_eq!(values_as_slice, ARRAY_DATA_2.values);
+    assert_eq!(values_as_slice, ARRAY_2.values.as_slice());
 
     assert_eq!(arr.get(0), None);
     assert_eq!(arr.get(1), None);
@@ -64,11 +56,7 @@ fn basic_array_test_2() {
 
 #[test]
 fn basic_array_iterator_test_1() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_1.index_range_starting_indices,
-        &ARRAY_DATA_1.index_range_skip_amounts,
-        &ARRAY_DATA_1.values,
-    );
+    let arr = ARRAY_1;
 
     let mut entries = arr.entries();
     let mut indices = arr.indices();
@@ -89,11 +77,7 @@ fn basic_array_iterator_test_1() {
 
 #[test]
 fn basic_array_iterator_test_2() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_2.index_range_starting_indices,
-        &ARRAY_DATA_2.index_range_skip_amounts,
-        &ARRAY_DATA_2.values,
-    );
+    let arr = ARRAY_2;
 
     let mut entries = arr.entries();
     let mut indices = arr.indices();
@@ -115,17 +99,17 @@ fn basic_array_iterator_test_2() {
 #[test]
 #[cfg(feature = "serde")]
 fn serde_test_1() {
-    let serialized = ron::to_string(&ARRAY_DATA_1).unwrap();
-    let deserialized: Result<NciArrayData<i32, 3, 6>, ron::de::SpannedError> =
+    let serialized = ron::to_string(&ARRAY_1).unwrap();
+    let deserialized: Result<NciArray<i32, 3, 6>, ron::de::SpannedError> =
         ron::from_str(&serialized);
-    assert_eq!(ARRAY_DATA_1, deserialized.unwrap());
+    assert_eq!(ARRAY_1, deserialized.unwrap());
 }
 
 #[test]
 #[cfg(feature = "serde")]
 fn serde_test_2() {
-    let serialized = ron::to_string(&ARRAY_DATA_2).unwrap();
-    let deserialized: Result<NciArrayData<i32, 3, 6>, ron::de::SpannedError> =
+    let serialized = ron::to_string(&ARRAY_2).unwrap();
+    let deserialized: Result<NciArray<i32, 3, 6>, ron::de::SpannedError> =
         ron::from_str(&serialized);
-    assert_eq!(ARRAY_DATA_2, deserialized.unwrap());
+    assert_eq!(ARRAY_2, deserialized.unwrap());
 }

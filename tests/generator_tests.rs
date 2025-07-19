@@ -5,7 +5,7 @@ use std::{
 };
 
 use non_contiguously_indexed_array::{
-    BuildConfiguration, NciArray, NciArrayDataGenerator, OutputFormat, ValueFormatting,
+    BuildConfiguration, NciArrayGenerator, OutputFormat, ValueFormatting,
 };
 
 mod constants;
@@ -25,12 +25,8 @@ const DEFAUTLT_RON_BUILD_CONFIGURATION: BuildConfiguration = BuildConfiguration 
 };
 
 fn generate_test_1_array() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_1.index_range_starting_indices,
-        &ARRAY_DATA_1.index_range_skip_amounts,
-        &ARRAY_DATA_1.values,
-    );
-    let mut generator = NciArrayDataGenerator::new();
+    let arr = ARRAY_1;
+    let mut generator = NciArrayGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
@@ -41,7 +37,7 @@ fn generate_test_1_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "use non_contiguously_indexed_array::NciArrayData;\n\npub const GENERATED_1: {} = NciArrayData {};",
+        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_1: {} = NciArray {};",
         generator.build_type("i32"),
         generator.build(DEFAUTLT_BUILD_CONFIGURATION),
     )
@@ -49,12 +45,8 @@ fn generate_test_1_array() {
 }
 
 fn generate_test_2_array() {
-    let arr = NciArray::new(
-        &ARRAY_DATA_2.index_range_starting_indices,
-        &ARRAY_DATA_2.index_range_skip_amounts,
-        &ARRAY_DATA_2.values,
-    );
-    let mut generator = NciArrayDataGenerator::new();
+    let arr = ARRAY_2;
+    let mut generator = NciArrayGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
@@ -64,7 +56,7 @@ fn generate_test_2_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "use non_contiguously_indexed_array::NciArrayData;\n\npub const GENERATED_2: {} = NciArrayData {};",
+        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_2: {} = NciArray {};",
         generator.build_type("i32"),
         generator.build(DEFAUTLT_BUILD_CONFIGURATION),
     )
@@ -72,21 +64,21 @@ fn generate_test_2_array() {
 }
 
 #[test]
-fn array_data_generator_test_1() {
+fn array_generator_test_1() {
     generate_test_1_array();
-    assert_eq!(generated::test_generated_1::GENERATED_1, ARRAY_DATA_1);
+    assert_eq!(generated::test_generated_1::GENERATED_1, ARRAY_1);
 }
 
 #[test]
-fn array_data_generator_test_2() {
+fn array_generator_test_2() {
     generate_test_2_array();
-    assert_eq!(generated::test_generated_2::GENERATED_2, ARRAY_DATA_2);
+    assert_eq!(generated::test_generated_2::GENERATED_2, ARRAY_2);
 }
 
 #[test]
 #[cfg_attr(feature = "panic", should_panic)]
 fn duplicate_entry_test() {
-    let mut generator = NciArrayDataGenerator::new();
+    let mut generator = NciArrayGenerator::new();
 
     generator.entry(0, 0);
     generator.entry(1, 1);
@@ -102,22 +94,18 @@ fn duplicate_entry_test() {
 #[test]
 #[cfg(feature = "serde")]
 fn serde_test_1() {
-    use non_contiguously_indexed_array::NciArrayData;
+    use non_contiguously_indexed_array::NciArray;
 
     generate_test_1_array();
     //let serialized = ron::to_string(&generated::test_generated_1::GENERATED_1).unwrap();
-    let arr = NciArray::new(
-        &ARRAY_DATA_1.index_range_starting_indices,
-        &ARRAY_DATA_1.index_range_skip_amounts,
-        &ARRAY_DATA_1.values,
-    );
-    let mut generator = NciArrayDataGenerator::new();
+    let arr = ARRAY_1;
+    let mut generator = NciArrayGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
     let built_ron = format!("{}", generator.build(DEFAUTLT_RON_BUILD_CONFIGURATION));
 
-    let deserialized: NciArrayData<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
+    let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
     assert_eq!(generated::test_generated_1::GENERATED_1, deserialized);
 
     assert_eq!(
@@ -147,23 +135,19 @@ fn serde_test_1() {
 #[test]
 #[cfg(feature = "serde")]
 fn serde_test_2() {
-    use non_contiguously_indexed_array::NciArrayData;
+    use non_contiguously_indexed_array::NciArray;
 
     generate_test_2_array();
 
-    let arr = NciArray::new(
-        &ARRAY_DATA_2.index_range_starting_indices,
-        &ARRAY_DATA_2.index_range_skip_amounts,
-        &ARRAY_DATA_2.values,
-    );
-    let mut generator = NciArrayDataGenerator::new();
+    let arr = ARRAY_2;
+    let mut generator = NciArrayGenerator::new();
     for (index, value) in arr.entries() {
         generator.entry(index, value);
     }
     let built_ron = format!("{}", generator.build(DEFAUTLT_RON_BUILD_CONFIGURATION));
     println!("{}", built_ron);
 
-    let deserialized: NciArrayData<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
+    let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
     assert_eq!(generated::test_generated_2::GENERATED_2, deserialized);
 
     assert_eq!(

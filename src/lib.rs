@@ -7,7 +7,7 @@ pub use generator::*;
     feature = "serde",
     serde(bound = "V: serde::Serialize + serde::de::DeserializeOwned")
 )]
-pub struct NciArrayData<V, const R: usize, const N: usize> {
+pub struct NciArray<V, const R: usize, const N: usize> {
     #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     pub index_range_starting_indices: [usize; R],
     #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
@@ -16,30 +16,7 @@ pub struct NciArrayData<V, const R: usize, const N: usize> {
     pub values: [V; N],
 }
 
-#[derive(Debug, PartialEq)]
-pub struct NciArray<'a, V> {
-    index_range_starting_indices: &'a [usize],
-    index_range_skip_amounts: &'a [usize],
-    values: &'a [V],
-    // finger: usize, // TODO test if exponential search would make sense
-}
-
-impl<'a, V> NciArray<'a, V> {
-    pub const fn new(
-        index_range_starting_indices: &'a [usize],
-        index_range_skip_amounts: &'a [usize],
-        values: &'a [V],
-    ) -> Self {
-        Self {
-            index_range_starting_indices,
-            index_range_skip_amounts,
-            values,
-            // finger: 0,
-        }
-    }
-}
-
-impl<'a, V> std::ops::Index<usize> for NciArray<'a, V> {
+impl<V, const R: usize, const N: usize> std::ops::Index<usize> for NciArray<V, R, N> {
     type Output = V;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -118,20 +95,20 @@ impl<'a> Iterator for NciArrayIndexIter<'a> {
     }
 }
 
-impl<'a, V> NciArray<'a, V> {
-    pub fn values(&self) -> core::slice::Iter<'a, V> {
+impl<V, const R: usize, const N: usize> NciArray<V, R, N> {
+    pub fn values(&self) -> core::slice::Iter<V> {
         self.values.iter()
     }
 
     pub fn indices(&self) -> NciArrayIndexIter {
         NciArrayIndexIter::new(
-            self.index_range_starting_indices,
-            self.index_range_skip_amounts,
+            self.index_range_starting_indices.as_slice(),
+            self.index_range_skip_amounts.as_slice(),
             self.values.len(),
         )
     }
 
-    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter, core::slice::Iter<'a, V>> {
+    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter, core::slice::Iter<V>> {
         self.indices().zip(self.values())
     }
 

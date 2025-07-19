@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct NciArrayDataGenerator<V> {
+pub struct NciArrayGenerator<V> {
     entries_ordered_monotonically_increasing: bool,
     last_added_entry_index: Option<usize>,
     // values of the format (start_index, skipped_since_last); the skip amounts are relative
@@ -23,7 +23,7 @@ pub struct BuildConfiguration {
     pub value_formatting: ValueFormatting,
 }
 
-impl<V: std::fmt::Display + std::fmt::Debug> NciArrayDataGenerator<V> {
+impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
     pub fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
@@ -107,7 +107,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayDataGenerator<V> {
         let index_range_count = self.index_ranges.len();
         let value_count = self.entries.len();
 
-        format!("NciArrayData<{value_type_str}, {index_range_count}, {value_count}>")
+        format!("NciArray<{value_type_str}, {index_range_count}, {value_count}>")
     }
 
     pub fn build(&mut self, build_config: BuildConfiguration) -> impl std::fmt::Display + use<V> {
