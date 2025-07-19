@@ -65,16 +65,16 @@ impl<'a> NciArrayIndexIter<'a> {
         index_range_skip_amounts: &'a [usize],
         value_count: usize,
     ) -> Self {
-        let index = index_range_starting_indices[0];
-        let skipped = index_range_skip_amounts[0];
+        let index = index_range_starting_indices.get(0).unwrap_or(&usize::MAX);
+        let skipped = index_range_skip_amounts.get(0).unwrap_or(&usize::MAX);
         let next_index_range_starting_index = index_range_starting_indices.get(1);
         let next_index_range_skip_amount = index_range_skip_amounts.get(1);
 
         Self {
             index_range_starting_indices,
             index_range_skip_amounts,
-            index,
-            skipped,
+            index: *index,
+            skipped: *skipped,
             next_range_index: 1,
             next_index_range_starting_index,
             next_index_range_skip_amount,
