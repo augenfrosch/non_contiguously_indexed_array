@@ -96,11 +96,11 @@ impl<'a> Iterator for NciArrayIndexIter<'a> {
 }
 
 impl<V, const R: usize, const N: usize> NciArray<V, R, N> {
-    pub fn values(&self) -> core::slice::Iter<V> {
+    pub fn values(&self) -> core::slice::Iter<'_, V> {
         self.values.iter()
     }
 
-    pub fn indices(&self) -> NciArrayIndexIter {
+    pub fn indices(&self) -> NciArrayIndexIter<'_> {
         NciArrayIndexIter::new(
             self.index_range_starting_indices.as_slice(),
             self.index_range_skip_amounts.as_slice(),
@@ -108,7 +108,7 @@ impl<V, const R: usize, const N: usize> NciArray<V, R, N> {
         )
     }
 
-    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter, core::slice::Iter<V>> {
+    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter<'_>, core::slice::Iter<'_, V>> {
         self.indices().zip(self.values())
     }
 
