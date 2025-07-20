@@ -108,10 +108,10 @@ fn serde_test_1() {
     let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
     assert_eq!(generated::test_generated_1::GENERATED_1, deserialized);
 
-    // assert_eq!(
-    //     built_ron,
-    //     ron::to_string(&generated::test_generated_1::GENERATED_1).unwrap()
-    // );
+    assert_eq!(
+        built_ron,
+        ron::to_string(&generated::test_generated_1::GENERATED_1).unwrap()
+    );
 
     let built_ron = format!(
         "{}",
@@ -120,19 +120,16 @@ fn serde_test_1() {
             value_formatting: ValueFormatting::Display
         })
     );
-    let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
-    assert_eq!(generated::test_generated_1::GENERATED_1, deserialized);
-
-    // assert_eq!(
-    //     built_ron,
-    //     ron::ser::to_string_pretty(
-    //         &generated::test_generated_1::GENERATED_1,
-    //         ron::ser::PrettyConfig::new()
-    //             .indentor("\t".to_string())
-    //             .separate_tuple_members(true) // `serde-big-array` seems to serialize them as tuples not arrays
-    //     )
-    //     .unwrap()
-    // );
+    assert_eq!(
+        built_ron,
+        ron::ser::to_string_pretty(
+            &generated::test_generated_1::GENERATED_1,
+            ron::ser::PrettyConfig::new()
+                .indentor("\t".to_string())
+                .separate_tuple_members(true) // `serde-big-array` seems to serialize them as tuples not arrays
+        )
+        .unwrap()
+    );
 }
 
 #[test]
@@ -148,15 +145,15 @@ fn serde_test_2() {
         generator.entry(index, value);
     }
     let built_ron = format!("{}", generator.build(DEFAUTLT_RON_BUILD_CONFIGURATION));
-    // println!("{}", built_ron);
+    println!("{}", built_ron);
 
     let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
     assert_eq!(generated::test_generated_2::GENERATED_2, deserialized);
 
-    // assert_eq!(
-    //     built_ron,
-    //     ron::to_string(&generated::test_generated_2::GENERATED_2).unwrap()
-    // );
+    assert_eq!(
+        built_ron,
+        ron::to_string(&generated::test_generated_2::GENERATED_2).unwrap()
+    );
 
     let built_ron = format!(
         "{}",
@@ -165,40 +162,14 @@ fn serde_test_2() {
             value_formatting: ValueFormatting::Display
         })
     );
-    // println!("{}", built_ron);
-
-    let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_ron).unwrap();
-    assert_eq!(generated::test_generated_2::GENERATED_2, deserialized);
-
-    // assert_eq!(
-    //     built_ron,
-    //     ron::ser::to_string_pretty(
-    //         &generated::test_generated_2::GENERATED_2,
-    //         ron::ser::PrettyConfig::new()
-    //             .indentor("\t".to_string())
-    //             .separate_tuple_members(true)
-    //     )
-    //     .unwrap()
-    // );
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn serde_test_3() {
-    use non_contiguously_indexed_array::NciArray;
-
-    generate_test_1_array();
-
-    let arr = ARRAY_1;
-    let mut generator = NciArrayGenerator::new();
-    for (index, value) in arr.entries() {
-        generator.entry(index, value);
-    }
-    let built_rust_codegen = generator.build(DEFAUTLT_BUILD_CONFIGURATION);
-
-    let built_to_ron = non_contiguously_indexed_array::built_rust_codegen_to(&built_rust_codegen, OutputFormat::RON, None);
-    println!("{}", built_to_ron);
-
-    let deserialized: NciArray<i32, 3, 6> = ron::from_str(&built_to_ron).unwrap();
-    assert_eq!(generated::test_generated_1::GENERATED_1, deserialized);
+    assert_eq!(
+        built_ron,
+        ron::ser::to_string_pretty(
+            &generated::test_generated_2::GENERATED_2,
+            ron::ser::PrettyConfig::new()
+                .indentor("\t".to_string())
+                .separate_tuple_members(true)
+        )
+        .unwrap()
+    );
 }

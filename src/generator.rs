@@ -101,7 +101,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         }
     }
 
-    pub fn build_type(&mut self, value_type_str: &str) -> String {
+    pub fn build_type(&mut self, value_type_str: &str) -> impl std::fmt::Display + use<V> {
         self.ensure_output_preconditions();
 
         let index_range_count = self.index_ranges.len();
@@ -110,69 +110,109 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         format!("NciArray<{value_type_str}, {index_range_count}, {value_count}>")
     }
 
-    pub fn build(&mut self, build_config: BuildConfiguration) -> String {
+    pub fn build(&mut self, build_config: BuildConfiguration) -> impl std::fmt::Display + use<V> {
         self.ensure_output_preconditions();
 
-        let mut output_string = "{\n".to_string();
+        let (struct_opening_char, struct_closing_char, array_opening_char, array_closing_char) =
+            match build_config.output_format {
+                OutputFormat::RustCodegen => ('{', '}', '[', ']'),
+                OutputFormat::RON | OutputFormat::RONPretty => ('(', ')', '(', ')'),
+            };
+        let (new_line_str, indentation_str, space_str) = match build_config.output_format {
+            OutputFormat::RON => ("", "", ""),
+            _ => ("\n", "\t", " "),
+        };
 
-        output_string.push_str("\tindex_range_starting_indices: [\n");
-        for (starting_index, _) in &self.index_ranges {
+        let mut output_string = format!("{}{new_line_str}", struct_opening_char);
+
+        output_string.push_str(&format!(
+            "{indentation_str}index_range_starting_indices:{space_str}{}{new_line_str}",
+            array_opening_char
+        ));
+        for (i, (starting_index, _)) in self.index_ranges.iter().enumerate() {
+            let comma_str = match build_config.output_format {
+                OutputFormat::RON => {
+                    if i == self.index_ranges.len() - 1 {
+                        ""
+                    } else {
+                        ","
+                    }
+                }
+                _ => ",",
+            };
             output_string.push_str(&format!(
-                "\t\t{:?},\n",
+                "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
                 *starting_index
             ));
         }
-        output_string.push_str("\t],\n");
+        output_string.push_str(&format!(
+            "{indentation_str}{},{new_line_str}",
+            array_closing_char
+        ));
 
-        output_string.push_str("\tindex_range_skip_amounts: [\n");
+        output_string.push_str(&format!(
+            "{indentation_str}index_range_skip_amounts:{space_str}{}{new_line_str}",
+            array_opening_char
+        ));
         let mut total_skip_amount = 0;
-        for (_, skip_amount) in &self.index_ranges {
+        for (i, (_, skip_amount)) in self.index_ranges.iter().enumerate() {
+            let comma_str = match build_config.output_format {
+                OutputFormat::RON => {
+                    if i == self.index_ranges.len() - 1 {
+                        ""
+                    } else {
+                        ","
+                    }
+                }
+                _ => ",",
+            };
             total_skip_amount += skip_amount;
             output_string.push_str(&format!(
-                "\t\t{:?},\n",
+                "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
                 total_skip_amount
             ));
         }
-        output_string.push_str("\t],\n");
+        output_string.push_str(&format!(
+            "{indentation_str}{},{new_line_str}",
+            array_closing_char
+        ));
 
-        output_string.push_str("\tvalues: [\n");
-        for (_, value) in &self.entries {
+        output_string.push_str(&format!(
+            "{indentation_str}values:{space_str}{}{new_line_str}",
+            array_opening_char
+        ));
+        for (i, (_, value)) in self.entries.iter().enumerate() {
+            let comma_str = match build_config.output_format {
+                OutputFormat::RON => {
+                    if i == self.entries.len() - 1 {
+                        ""
+                    } else {
+                        ","
+                    }
+                }
+                _ => ",",
+            };
             let entry_str = match build_config.value_formatting {
                 ValueFormatting::Display => &format!(
-                                "\t\t{},\n",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{}{comma_str}{new_line_str}",
+                    *value
+                ),
                 ValueFormatting::Debug => &format!(
-                                "\t\t{:?},\n",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
+                    *value
+                ),
             };
             output_string.push_str(entry_str);
         }
-        output_string.push_str("\t],\n");
-        output_string.push_str("}");
-
-        match build_config.output_format {
-            OutputFormat::RustCodegen => output_string,
-            OutputFormat::RON => output_string.replace(['\t', '\n', ' '], "")
-                .replace(['{', '['], "(").replace(['}', ']'], ")"),
-            OutputFormat::RONPretty => output_string.replace(['{', '['], "(").replace(['}', ']'], ")"),
-        }
-    }
-
-}
-
-pub fn built_rust_codegen_to(rust_codegen: &str, output_format: OutputFormat, additional_filters: Option<&[&str]>) -> String {
-    let mut output_string = rust_codegen.to_string();
-    if let Some(additional_filters) = additional_filters {
-        for filter in additional_filters {
-            output_string = output_string.replace(filter, "");
-        }
-    }
-    match output_format {
-        OutputFormat::RustCodegen => output_string,
-        OutputFormat::RON => output_string.replace(['\t', '\n', ' '], "")
-            .replace(['{', '['], "(").replace(['}', ']'], ")"),
-        OutputFormat::RONPretty => output_string.replace(['{', '['], "(").replace(['}', ']'], ")"),
+        let comma_str = match build_config.output_format {
+            OutputFormat::RON => "",
+            _ => ",",
+        };
+        output_string.push_str(&format!(
+            "{indentation_str}{}{comma_str}{new_line_str}",
+            array_closing_char
+        ));
+        output_string.push_str(&format!("{}", struct_closing_char));
+        output_string
     }
 }
