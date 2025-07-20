@@ -16,6 +16,8 @@ pub enum OutputFormat {
 pub enum ValueFormatting {
     Display,
     Debug,
+    DisplayAlternate,
+    DebugAlternate,
 }
 
 pub struct BuildConfiguration {
@@ -101,7 +103,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         }
     }
 
-    pub fn build_type(&mut self, value_type_str: &str) -> impl std::fmt::Display + use<V> {
+    pub fn build_type(&mut self, value_type_str: &str) -> String {
         self.ensure_output_preconditions();
 
         let index_range_count = self.index_ranges.len();
@@ -110,7 +112,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         format!("NciArray<{value_type_str}, {index_range_count}, {value_count}>")
     }
 
-    pub fn build(&mut self, build_config: BuildConfiguration) -> impl std::fmt::Display + use<V> {
+    pub fn build(&mut self, build_config: BuildConfiguration) -> String {
         self.ensure_output_preconditions();
 
         let (struct_opening_char, struct_closing_char, array_opening_char, array_closing_char) =
@@ -194,13 +196,21 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
             };
             let entry_str = match build_config.value_formatting {
                 ValueFormatting::Display => &format!(
-                    "{indentation_str}{indentation_str}{}{comma_str}{new_line_str}",
-                    *value
-                ),
+                                "{indentation_str}{indentation_str}{}{comma_str}{new_line_str}",
+                                *value
+                            ),
                 ValueFormatting::Debug => &format!(
-                    "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
-                    *value
-                ),
+                                "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
+                                *value
+                            ),
+                ValueFormatting::DisplayAlternate => &format!(
+                                "{indentation_str}{indentation_str}{:#}{comma_str}{new_line_str}",
+                                *value
+                            ),
+                ValueFormatting::DebugAlternate => &format!(
+                                "{indentation_str}{indentation_str}{:#?}{comma_str}{new_line_str}",
+                                *value
+                            ),
             };
             output_string.push_str(entry_str);
         }
