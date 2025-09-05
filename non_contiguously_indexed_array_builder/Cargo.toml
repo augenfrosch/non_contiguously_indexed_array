@@ -1,0 +1,20 @@
+[package]
+name = "non_contiguously_indexed_array_builder"
+version = "0.1.0"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+log = { version = "0.4", optional = true}
+
+[dev-dependencies]
+non_contiguously_indexed_array = { path = "../" }
+
+[features]
+default = ["log"]
+log = ["dep:log", "log/std"]

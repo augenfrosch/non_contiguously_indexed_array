@@ -1,10 +1,10 @@
-#[derive(Debug)]
-pub struct NciArrayGenerator<V> {
+pub struct NciArrayBuilder<V> {
     entries_ordered_monotonically_increasing: bool,
-    last_added_entry_index: Option<usize>,
-    // values of the format (start_index, skipped_since_last); the skip amounts are relative
-    index_ranges: Vec<(usize, usize)>,
-    entries: Vec<(usize, V)>,
+    last_added_entry_index: Option<u32>,
+    // Values of the format (start_index, skipped_since_last).
+    // The skip amounts are relative to the previous range as opposed to the final NciArray where they are absolute
+    index_ranges: Vec<(u32, u32)>,
+    entries: Vec<(u32, V)>,
 }
 
 pub enum OutputFormat {
@@ -25,7 +25,13 @@ pub struct BuildConfiguration {
     pub value_formatting: ValueFormatting,
 }
 
-impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
+impl<V: std::fmt::Display + std::fmt::Debug> Default for NciArrayBuilder<V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
     pub fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
@@ -35,7 +41,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         }
     }
 
-    pub fn entry(&mut self, index: usize, value: V) {
+    pub fn entry(&mut self, index: u32, value: V) {
         if self.entries_ordered_monotonically_increasing {
             if let Some(last_added_entry_index) = self.last_added_entry_index {
                 if index > last_added_entry_index {
@@ -44,9 +50,9 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
                         self.index_ranges.push((index, index_difference - 1));
                     }
                 } else {
-                    #[cfg(feature = "panic")]
                     if index == last_added_entry_index {
-                        panic!("Duplicate index `{}`", index);
+                        #[cfg(feature = "log")]
+                        log::warn!("Duplicate index `{}` with new value `{:?}`", index, value);
                     }
                     self.entries_ordered_monotonically_increasing = false;
                 }
@@ -68,20 +74,19 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         if !self.entries_ordered_monotonically_increasing {
             self.entries
                 .sort_by(|(first_index, _), (second_index, _)| first_index.cmp(second_index));
-            #[cfg(not(feature = "panic"))]
             {
                 // filter duplicate entries, first entry with index is retained
                 let mut expected_index = self.entries.first().unwrap().0;
                 self.entries.retain(|(entry_index, _)| {
                     let index_as_expected = *entry_index == expected_index;
                     if index_as_expected {
-                        expected_index = expected_index + 1;
+                        expected_index += 1;
                     }
                     index_as_expected
                 });
             }
 
-            for (index, _) in &self.entries {
+            for (index, value) in &self.entries {
                 if let Some(last_added_entry_index) = self.last_added_entry_index {
                     if *index > last_added_entry_index {
                         let index_difference = index - last_added_entry_index;
@@ -89,8 +94,8 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
                             self.index_ranges.push((*index, index_difference - 1));
                         }
                     } else {
-                        #[cfg(feature = "panic")]
-                        panic!("Duplicate index `{}`", *index);
+                        #[cfg(feature = "log")]
+                        log::warn!("Duplicate index `{}` with new value `{:?}`", index, value);
                     }
                 } else {
                     self.index_ranges.push((*index, *index));
@@ -103,34 +108,29 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
         }
     }
 
-    pub fn build_type(&mut self, value_type_str: &str) -> String {
-        self.ensure_output_preconditions();
-
-        let index_range_count = self.index_ranges.len();
-        let value_count = self.entries.len();
-
-        format!("NciArray<{value_type_str}, {index_range_count}, {value_count}>")
-    }
-
     pub fn build(&mut self, build_config: BuildConfiguration) -> String {
+        use std::fmt::Write as _;
+
         self.ensure_output_preconditions();
 
-        let (struct_opening_char, struct_closing_char, array_opening_char, array_closing_char) =
+        let (struct_opening_str, struct_closing_str, array_opening_str, array_closing_str) =
             match build_config.output_format {
-                OutputFormat::RustCodegen => ('{', '}', '[', ']'),
-                OutputFormat::RON | OutputFormat::RONPretty => ('(', ')', '(', ')'),
+                OutputFormat::RustCodegen => ("{", "}", "&[", "]"),
+                OutputFormat::RON | OutputFormat::RONPretty => ("(", ")", "(", ")"),
             };
         let (new_line_str, indentation_str, space_str) = match build_config.output_format {
             OutputFormat::RON => ("", "", ""),
             _ => ("\n", "\t", " "),
         };
 
-        let mut output_string = format!("{}{new_line_str}", struct_opening_char);
+        let mut output_string = format!("{}{new_line_str}", struct_opening_str);
 
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}index_range_starting_indices:{space_str}{}{new_line_str}",
-            array_opening_char
-        ));
+            array_opening_str
+        )
+        .unwrap();
         for (i, (starting_index, _)) in self.index_ranges.iter().enumerate() {
             let comma_str = match build_config.output_format {
                 OutputFormat::RON => {
@@ -142,20 +142,26 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
                 }
                 _ => ",",
             };
-            output_string.push_str(&format!(
+            write!(
+                output_string,
                 "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
                 *starting_index
-            ));
+            )
+            .unwrap();
         }
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}{},{new_line_str}",
-            array_closing_char
-        ));
+            array_closing_str
+        )
+        .unwrap();
 
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}index_range_skip_amounts:{space_str}{}{new_line_str}",
-            array_opening_char
-        ));
+            array_opening_str
+        )
+        .unwrap();
         let mut total_skip_amount = 0;
         for (i, (_, skip_amount)) in self.index_ranges.iter().enumerate() {
             let comma_str = match build_config.output_format {
@@ -169,20 +175,26 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
                 _ => ",",
             };
             total_skip_amount += skip_amount;
-            output_string.push_str(&format!(
+            write!(
+                output_string,
                 "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
                 total_skip_amount
-            ));
+            )
+            .unwrap();
         }
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}{},{new_line_str}",
-            array_closing_char
-        ));
+            array_closing_str,
+        )
+        .unwrap();
 
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}values:{space_str}{}{new_line_str}",
-            array_opening_char
-        ));
+            array_opening_str,
+        )
+        .unwrap();
         for (i, (_, value)) in self.entries.iter().enumerate() {
             let comma_str = match build_config.output_format {
                 OutputFormat::RON => {
@@ -196,33 +208,35 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayGenerator<V> {
             };
             let entry_str = match build_config.value_formatting {
                 ValueFormatting::Display => &format!(
-                                "{indentation_str}{indentation_str}{}{comma_str}{new_line_str}",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{}{comma_str}{new_line_str}",
+                    *value
+                ),
                 ValueFormatting::Debug => &format!(
-                                "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
+                    *value
+                ),
                 ValueFormatting::DisplayAlternate => &format!(
-                                "{indentation_str}{indentation_str}{:#}{comma_str}{new_line_str}",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{:#}{comma_str}{new_line_str}",
+                    *value
+                ),
                 ValueFormatting::DebugAlternate => &format!(
-                                "{indentation_str}{indentation_str}{:#?}{comma_str}{new_line_str}",
-                                *value
-                            ),
+                    "{indentation_str}{indentation_str}{:#?}{comma_str}{new_line_str}",
+                    *value
+                ),
             };
-            output_string.push_str(entry_str);
+            write!(output_string, "{}", entry_str).unwrap();
         }
         let comma_str = match build_config.output_format {
             OutputFormat::RON => "",
             _ => ",",
         };
-        output_string.push_str(&format!(
+        write!(
+            output_string,
             "{indentation_str}{}{comma_str}{new_line_str}",
-            array_closing_char
-        ));
-        output_string.push_str(&format!("{}", struct_closing_char));
+            array_closing_str
+        )
+        .unwrap();
+        write!(output_string, "{}", struct_closing_str).unwrap();
         output_string
     }
 }

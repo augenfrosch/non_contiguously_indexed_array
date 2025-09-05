@@ -1,5 +1,3 @@
-use non_contiguously_indexed_array::NciArray;
-
 mod constants;
 use constants::*;
 
@@ -7,7 +5,7 @@ use constants::*;
 fn basic_array_test_1() {
     let arr = ARRAY_1;
     let values_as_slice = arr.values().as_slice();
-    assert_eq!(values_as_slice, ARRAY_1.values.as_slice());
+    assert_eq!(values_as_slice, ARRAY_1.values);
 
     assert_eq!(arr.get(0), Some(&0));
     assert_eq!(arr.get(1), Some(&1));
@@ -28,7 +26,7 @@ fn basic_array_test_1() {
 fn basic_array_test_2() {
     let arr = ARRAY_2;
     let values_as_slice = arr.values().as_slice();
-    assert_eq!(values_as_slice, ARRAY_2.values.as_slice());
+    assert_eq!(values_as_slice, ARRAY_2.values);
 
     assert_eq!(arr.get(0), None);
     assert_eq!(arr.get(1), None);
@@ -67,7 +65,7 @@ fn basic_array_iterator_test_1() {
     {
         assert_eq!(entry.0, index);
         assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1 as usize); // not generally true
+        assert_eq!(entry.0, *entry.1); // not generally true
     }
 
     assert_eq!(entries.next(), None);
@@ -88,28 +86,10 @@ fn basic_array_iterator_test_2() {
     {
         assert_eq!(entry.0, index);
         assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1 as usize); // not generally true
+        assert_eq!(entry.0, *entry.1); // not generally true
     }
 
     assert_eq!(entries.next(), None);
     assert_eq!(indices.next(), None);
     assert_eq!(values.next(), None);
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn serde_test_1() {
-    let serialized = ron::to_string(&ARRAY_1).unwrap();
-    let deserialized: Result<NciArray<i32, 3, 6>, ron::de::SpannedError> =
-        ron::from_str(&serialized);
-    assert_eq!(ARRAY_1, deserialized.unwrap());
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn serde_test_2() {
-    let serialized = ron::to_string(&ARRAY_2).unwrap();
-    let deserialized: Result<NciArray<i32, 3, 6>, ron::de::SpannedError> =
-        ron::from_str(&serialized);
-    assert_eq!(ARRAY_2, deserialized.unwrap());
 }

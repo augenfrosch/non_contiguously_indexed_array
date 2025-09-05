@@ -1,19 +1,26 @@
 [workspace]
+members = [
+    "non_contiguously_indexed_array_builder",
+]
 resolver = "3"
+
+[workspace.lints]
+clippy.assigning_clones = "warn"
+clippy.single_char_pattern = "warn"
+clippy.return_self_not_must_use = "warn"
+clippy.format_push_string = "warn"
+clippy.ref_option = "warn"
+clippy.default_trait_access = "warn"
+clippy.explicit_iter_loop = "warn"
+clippy.unnecessary_semicolon = "warn"
+clippy.redundant_closure_for_method_calls = "warn"
+clippy.option_if_let_else = "warn"
+clippy.use_self = "warn"
 
 [package]
 name = "non_contiguously_indexed_array"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 
-[dependencies]
-serde = { version = "1.0", features = ["derive"], optional = true }
-serde-big-array = { version = "0.5.1", optional = true }
-
-[dev-dependencies]
-ron = { version = "0.8" }
-
-[features]
-default = ["serde"]
-panic = []
-serde = ["dep:serde", "dep:serde-big-array"]
+[lints]
+workspace = true
