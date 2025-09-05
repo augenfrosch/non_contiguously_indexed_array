@@ -1,33 +1,60 @@
-pub struct NciArray<V: 'static> {
-    pub index_range_starting_indices: &'static [u32],
-    pub index_range_skip_amounts: &'static [u32],
-    pub values: &'static [V],
+pub struct NciArray<'a, I: NciIndex, V> {
+    pub index_range_starting_indices: &'a [I],
+    pub index_range_skip_amounts: &'a [I],
+    pub values: &'a [V],
 }
 
-impl<V> std::ops::Index<u32> for NciArray<V> {
+pub trait NciIndex:
+    core::ops::Sub<Output = Self>
+    + core::ops::Add<Output = Self>
+    + core::ops::AddAssign
+    + Ord
+    + PartialOrd
+    + Sized
+    + Clone
+    + Copy
+    + Default
+{
+    const ZERO: Self;
+    const ONE: Self;
+
+    fn as_usize(self) -> usize;
+}
+
+impl NciIndex for u32 {
+    const ZERO: Self = 0;
+    const ONE: Self = 1;
+
+    #[inline]
+    fn as_usize(self) -> usize {
+        self as usize
+    }
+}
+
+impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
     type Output = V;
 
-    fn index(&self, index: u32) -> &Self::Output {
+    fn index(&self, index: I) -> &Self::Output {
         self.get(index).unwrap()
     }
 }
 
-pub struct NciArrayIndexIter {
-    index_range_starting_indices: &'static [u32],
-    index_range_skip_amounts: &'static [u32],
-    index: u32,
-    skipped: u32,
+pub struct NciArrayIndexIter<'a, I: NciIndex> {
+    index_range_starting_indices: &'a [I],
+    index_range_skip_amounts: &'a [I],
+    index: I,
+    skipped: I,
     next_range_index: usize,
-    next_index_range_starting_index: Option<&'static u32>,
-    next_index_range_skip_amount: Option<&'static u32>,
+    next_index_range_starting_index: Option<&'a I>,
+    next_index_range_skip_amount: Option<&'a I>,
     true_index: usize, // MAYBE no longer needed
     value_count: usize,
 }
 
-impl NciArrayIndexIter {
+impl<'a, I: NciIndex> NciArrayIndexIter<'a, I> {
     fn new(
-        index_range_starting_indices: &'static [u32],
-        index_range_skip_amounts: &'static [u32],
+        index_range_starting_indices: &'a [I],
+        index_range_skip_amounts: &'a [I],
         value_count: usize,
     ) -> Self {
         if let (Some(initial_index), Some(initial_skip_amount)) = (
@@ -52,8 +79,8 @@ impl NciArrayIndexIter {
             Self {
                 index_range_starting_indices,
                 index_range_skip_amounts,
-                index: u32::MAX,
-                skipped: u32::MAX,
+                index: I::default(),
+                skipped: I::default(),
                 next_range_index: usize::MAX,
                 next_index_range_starting_index: None,
                 next_index_range_skip_amount: None,
@@ -64,19 +91,19 @@ impl NciArrayIndexIter {
     }
 }
 
-impl Iterator for NciArrayIndexIter {
-    type Item = u32;
+impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
+    type Item = I;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.true_index < self.value_count {
             let value = self.index;
 
-            self.index += 1;
+            self.index += I::ONE;
             if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
                 self.next_index_range_starting_index,
                 self.next_index_range_skip_amount,
-            ) && next_index_range_starting_index - self.index
-                <= next_index_range_skip_amount - self.skipped
+            ) && *next_index_range_starting_index - self.index
+                <= *next_index_range_skip_amount - self.skipped
             {
                 self.index = *next_index_range_starting_index;
                 self.skipped = *next_index_range_skip_amount;
@@ -96,12 +123,12 @@ impl Iterator for NciArrayIndexIter {
     }
 }
 
-impl<V> NciArray<V> {
-    pub fn values(&self) -> core::slice::Iter<'static, V> {
+impl<I: NciIndex, V> NciArray<'_, I, V> {
+    pub fn values(&self) -> core::slice::Iter<'_, V> {
         self.values.iter()
     }
 
-    pub fn indices(&self) -> NciArrayIndexIter {
+    pub fn indices(&self) -> NciArrayIndexIter<'_, I> {
         NciArrayIndexIter::new(
             self.index_range_starting_indices,
             self.index_range_skip_amounts,
@@ -109,11 +136,11 @@ impl<V> NciArray<V> {
         )
     }
 
-    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter, core::slice::Iter<'static, V>> {
+    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter<'_, I>, core::slice::Iter<'_, V>> {
         self.indices().zip(self.values())
     }
 
-    pub fn has_entry(&self, index: u32) -> bool {
+    pub fn has_entry(&self, index: I) -> bool {
         let range_index = match self.index_range_starting_indices.binary_search(&index) {
             Ok(index) => index,
             Err(index) => index.saturating_sub(1),
@@ -137,17 +164,19 @@ impl<V> NciArray<V> {
                 self.index_range_starting_indices.get(range_index + 1),
                 self.index_range_skip_amounts.get(range_index + 1),
             ) {
-                index_range_starting_index
-                    + (next_index_range_starting_index - next_index_range_skip_amount)
-                    - true_starting_index
+                (index_range_starting_index
+                    + (*next_index_range_starting_index - *next_index_range_skip_amount)
+                    - true_starting_index)
+                    .as_usize()
             } else {
-                index_range_starting_index + self.values.len() as u32 - true_starting_index
+                index_range_starting_index.as_usize() + self.values.len()
+                    - true_starting_index.as_usize()
             };
 
-        index >= index_range_starting_index && index < index_range_end
+        index >= index_range_starting_index && index.as_usize() < index_range_end
     }
 
-    pub fn get(&self, index: u32) -> Option<&V> {
+    pub fn get(&self, index: I) -> Option<&V> {
         let range_index = match self.index_range_starting_indices.binary_search(&index) {
             Ok(index) => index,
             Err(index) => index.saturating_sub(1),
@@ -163,19 +192,19 @@ impl<V> NciArray<V> {
             .get(range_index)
             .cloned()
             .unwrap_or_default();
-        let slice_start = (index_range_starting_index - index_range_skipped) as usize;
+        let slice_start = (index_range_starting_index - index_range_skipped).as_usize();
         let slice_end =
             if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
                 self.index_range_starting_indices.get(range_index + 1),
                 self.index_range_skip_amounts.get(range_index + 1),
             ) {
-                (next_index_range_starting_index - next_index_range_skip_amount) as usize
+                (*next_index_range_starting_index - *next_index_range_skip_amount).as_usize()
             } else {
                 self.values.len()
             };
         let slice: &[V] = &self.values[slice_start..slice_end];
         if index >= index_range_starting_index {
-            slice.get((index - index_range_starting_index) as usize)
+            slice.get((index - index_range_starting_index).as_usize())
         } else {
             None // TODO look into finding a better way of checking this
         }

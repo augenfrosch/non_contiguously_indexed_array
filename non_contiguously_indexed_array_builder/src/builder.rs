@@ -1,10 +1,12 @@
-pub struct NciArrayBuilder<V> {
+use non_contiguously_indexed_array::NciIndex;
+
+pub struct NciArrayBuilder<I: NciIndex, V> {
     entries_ordered_monotonically_increasing: bool,
-    last_added_entry_index: Option<u32>,
+    last_added_entry_index: Option<I>,
     // Values of the format (start_index, skipped_since_last).
     // The skip amounts are relative to the previous range as opposed to the final NciArray where they are absolute
-    index_ranges: Vec<(u32, u32)>,
-    entries: Vec<(u32, V)>,
+    index_ranges: Vec<(I, I)>,
+    entries: Vec<(I, V)>,
 }
 
 pub enum OutputFormat {
@@ -25,13 +27,14 @@ pub struct BuildConfiguration {
     pub value_formatting: ValueFormatting,
 }
 
-impl<V: std::fmt::Display + std::fmt::Debug> Default for NciArrayBuilder<V> {
+impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> Default for NciArrayBuilder<I, V> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
+impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<I, V> {
+    #[must_use] 
     pub fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
@@ -41,18 +44,18 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
         }
     }
 
-    pub fn entry(&mut self, index: u32, value: V) {
+    pub fn entry(&mut self, index: I, value: V) {
         if self.entries_ordered_monotonically_increasing {
             if let Some(last_added_entry_index) = self.last_added_entry_index {
                 if index > last_added_entry_index {
                     let index_difference = index - last_added_entry_index;
-                    if index_difference != 1 {
-                        self.index_ranges.push((index, index_difference - 1));
+                    if index_difference != I::ONE {
+                        self.index_ranges.push((index, index_difference - I::ONE));
                     }
                 } else {
                     if index == last_added_entry_index {
                         #[cfg(feature = "log")]
-                        log::warn!("Duplicate index `{}` with new value `{:?}`", index, value);
+                        log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
                     }
                     self.entries_ordered_monotonically_increasing = false;
                 }
@@ -80,7 +83,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
                 self.entries.retain(|(entry_index, _)| {
                     let index_as_expected = *entry_index == expected_index;
                     if index_as_expected {
-                        expected_index += 1;
+                        expected_index += I::ONE;
                     }
                     index_as_expected
                 });
@@ -89,13 +92,13 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
             for (index, value) in &self.entries {
                 if let Some(last_added_entry_index) = self.last_added_entry_index {
                     if *index > last_added_entry_index {
-                        let index_difference = index - last_added_entry_index;
-                        if index_difference != 1 {
-                            self.index_ranges.push((*index, index_difference - 1));
+                        let index_difference = *index - last_added_entry_index;
+                        if index_difference != I::ONE {
+                            self.index_ranges.push((*index, index_difference - I::ONE));
                         }
                     } else {
                         #[cfg(feature = "log")]
-                        log::warn!("Duplicate index `{}` with new value `{:?}`", index, value);
+                        log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
                     }
                 } else {
                     self.index_ranges.push((*index, *index));
@@ -162,7 +165,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
             array_opening_str
         )
         .unwrap();
-        let mut total_skip_amount = 0;
+        let mut total_skip_amount = I::ZERO;
         for (i, (_, skip_amount)) in self.index_ranges.iter().enumerate() {
             let comma_str = match build_config.output_format {
                 OutputFormat::RON => {
@@ -174,7 +177,7 @@ impl<V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<V> {
                 }
                 _ => ",",
             };
-            total_skip_amount += skip_amount;
+            total_skip_amount += *skip_amount;
             write!(
                 output_string,
                 "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",

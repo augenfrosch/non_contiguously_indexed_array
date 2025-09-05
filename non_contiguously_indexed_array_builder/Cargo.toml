@@ -11,8 +11,6 @@ crate-type = ["rlib"]
 
 [dependencies]
 log = { version = "0.4", optional = true}
-
-[dev-dependencies]
 non_contiguously_indexed_array = { path = "../" }
 
 [features]

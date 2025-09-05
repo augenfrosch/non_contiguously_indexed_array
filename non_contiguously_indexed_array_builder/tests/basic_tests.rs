@@ -32,7 +32,7 @@ fn build_test_1_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_1: NciArray<u32> = NciArray {};",
+        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_1: NciArray<u32, u32> = NciArray {};",
         builder.build(DEFAUTLT_BUILD_CONFIGURATION),
     )
     .unwrap();
@@ -50,20 +50,38 @@ fn build_test_2_array() {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writeln!(
         writer,
-        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_2: NciArray<u32> = NciArray {};",
+        "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_2: NciArray<u32, u32> = NciArray {};",
         builder.build(DEFAUTLT_BUILD_CONFIGURATION),
     )
     .unwrap();
 }
 
 #[test]
-fn array_builder_test_1() {
+fn array_generator_test_1() {
     build_test_1_array();
-    assert_eq!(generated::test_generated_1::GENERATED_1.entries().map(|(index, element)| (index, *element)).collect::<Vec<(u32, u32)>>(), ARRAY_1.entries().map(|(index, element)| (index, *element)).collect::<Vec<(u32, u32)>>());
+    assert_eq!(
+        generated::test_generated_1::GENERATED_1
+            .entries()
+            .map(|(index, element)| (index, *element))
+            .collect::<Vec<(u32, u32)>>(),
+        ARRAY_1
+            .entries()
+            .map(|(index, element)| (index, *element))
+            .collect::<Vec<(u32, u32)>>()
+    );
 }
 
 #[test]
-fn array_builder_test_2() {
+fn array_generator_test_2() {
     build_test_2_array();
-    assert_eq!(generated::test_generated_2::GENERATED_2.entries().map(|(index, element)| (index, *element)).collect::<Vec<(u32, u32)>>(), ARRAY_2.entries().map(|(index, element)| (index, *element)).collect::<Vec<(u32, u32)>>());
+    assert_eq!(
+        generated::test_generated_2::GENERATED_2
+            .entries()
+            .map(|(index, element)| (index, *element))
+            .collect::<Vec<(u32, u32)>>(),
+        ARRAY_2
+            .entries()
+            .map(|(index, element)| (index, *element))
+            .collect::<Vec<(u32, u32)>>()
+    );
 }
