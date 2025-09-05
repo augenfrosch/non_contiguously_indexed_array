@@ -33,7 +33,7 @@ fn build_test_1_array() {
     writeln!(
         writer,
         "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_1: NciArray<u32, u32> = NciArray {};",
-        builder.build(DEFAUTLT_BUILD_CONFIGURATION),
+        builder.build(&DEFAUTLT_BUILD_CONFIGURATION),
     )
     .unwrap();
 }
@@ -51,7 +51,7 @@ fn build_test_2_array() {
     writeln!(
         writer,
         "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_2: NciArray<u32, u32> = NciArray {};",
-        builder.build(DEFAUTLT_BUILD_CONFIGURATION),
+        builder.build(&DEFAUTLT_BUILD_CONFIGURATION),
     )
     .unwrap();
 }

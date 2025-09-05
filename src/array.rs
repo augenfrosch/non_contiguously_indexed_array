@@ -128,6 +128,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         self.values.iter()
     }
 
+    #[must_use] 
     pub fn indices(&self) -> NciArrayIndexIter<'_, I> {
         NciArrayIndexIter::new(
             self.index_range_starting_indices,
@@ -149,12 +150,12 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         let index_range_starting_index = self
             .index_range_starting_indices
             .get(range_index)
-            .cloned()
+            .copied()
             .unwrap_or_default();
         let index_range_skipped = self
             .index_range_skip_amounts
             .get(range_index)
-            .cloned()
+            .copied()
             .unwrap_or_default();
 
         let true_starting_index = index_range_starting_index - index_range_skipped;
@@ -185,12 +186,12 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         let index_range_starting_index = self
             .index_range_starting_indices
             .get(range_index)
-            .cloned()
+            .copied()
             .unwrap_or_default();
         let index_range_skipped = self
             .index_range_skip_amounts
             .get(range_index)
-            .cloned()
+            .copied()
             .unwrap_or_default();
         let slice_start = (index_range_starting_index - index_range_skipped).as_usize();
         let slice_end =
