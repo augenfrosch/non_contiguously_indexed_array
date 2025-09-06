@@ -1,8 +1,18 @@
 [workspace]
 members = [
+    "non_contiguously_indexed_array",
     "non_contiguously_indexed_array_builder",
 ]
 resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/augenfrosch/non_contiguously_indexed_array"
+
+[workspace.dependencies]
+non_contiguously_indexed_array = { version = "0.3.0", path = "./non_contiguously_indexed_array", default-features = false}
+non_contiguously_indexed_array_builder = { version = "0.1.0", path = "./non_contiguously_indexed_array_builder", default-features = false }
 
 [workspace.lints]
 clippy.assigning_clones = "warn"
@@ -16,14 +26,3 @@ clippy.unnecessary_semicolon = "warn"
 clippy.redundant_closure_for_method_calls = "warn"
 clippy.option_if_let_else = "warn"
 clippy.use_self = "warn"
-
-[package]
-name = "non_contiguously_indexed_array"
-version = "0.3.0"
-edition = "2024"
-repository = "https://github.com/augenfrosch/non_contiguously_indexed_array"
-license = "Apache-2.0"
-categories = ["data-structures"]
-
-[lints]
-workspace = true
