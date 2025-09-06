@@ -14,4 +14,4 @@ Indexing requires a binary search over valid index ranges, with each iteration r
 The current data structure for the array is only space-efficient if the average length of continuous index ranges is long enough, as for each range, two values of the index type have to be stored. 
 
 ## Usage
-The current main way of generating a `non_contiguously_indexed_array::NciArray` is by Rust codegen via a `non_contiguously_indexed_array::NciArrayBuilder`, e.g., using a build script.
+The current main way of generating a `non_contiguously_indexed_array::NciArray` is by Rust codegen via a `non_contiguously_indexed_array_builder::NciArrayBuilder`, e.g., using a build script.
