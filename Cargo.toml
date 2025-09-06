@@ -21,6 +21,9 @@ clippy.use_self = "warn"
 name = "non_contiguously_indexed_array"
 version = "0.3.0"
 edition = "2024"
+repository = "https://github.com/augenfrosch/non_contiguously_indexed_array"
+license = "Apache-2.0"
+categories = ["data-structures"]
 
 [lints]
 workspace = true
