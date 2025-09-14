@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Copy, Default)]
-pub struct NciArray<'a, I: NciIndex, V> {
+pub struct NciArray<'a, I, V> {
     /// The user-defined index of the first element of each segment.
     /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
     pub segments_idx_begin: &'a [I],
@@ -10,6 +10,16 @@ pub struct NciArray<'a, I: NciIndex, V> {
 
     /// All the values stored in this array.
     pub values: &'a [V],
+}
+
+impl<'a, I, V> NciArray<'_, I, V> {
+    pub const fn new() -> Self {
+        Self {
+            segments_idx_begin: &[],
+            segments_mem_idx_begin: &[],
+            values: &[],
+        }
+    }
 }
 
 pub trait NciIndex:
