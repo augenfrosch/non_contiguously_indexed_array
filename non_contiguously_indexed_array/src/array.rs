@@ -1,6 +1,13 @@
 pub struct NciArray<'a, I: NciIndex, V> {
-    pub index_range_starting_indices: &'a [I],
-    pub index_range_skip_amounts: &'a [I],
+    /// The user-defined index of the first element of each segment.
+    /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
+    pub segments_idx_begin: &'a [I],
+
+    /// The memory index of the first element of each segment.
+    /// Example: `segments_mem_idx_begin[2] = 3` means the first element of the third segment is stored in memory index 3.
+    pub segments_mem_idx_begin: &'a [usize],
+
+    /// All the values stored in this array.
     pub values: &'a [V],
 }
 
@@ -40,86 +47,31 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
 }
 
 struct NciArrayIndexIter<'a, I: NciIndex> {
-    index_range_starting_indices: &'a [I],
-    index_range_skip_amounts: &'a [I],
-    index: I,
-    skipped: I,
-    next_range_index: usize,
-    next_index_range_starting_index: Option<&'a I>,
-    next_index_range_skip_amount: Option<&'a I>,
-    true_index: usize, // MAYBE no longer needed
-    value_count: usize,
-}
-
-impl<'a, I: NciIndex> NciArrayIndexIter<'a, I> {
-    fn new(
-        index_range_starting_indices: &'a [I],
-        index_range_skip_amounts: &'a [I],
-        value_count: usize,
-    ) -> Self {
-        if let (Some(initial_index), Some(initial_skip_amount)) = (
-            index_range_starting_indices.first(),
-            index_range_skip_amounts.first(),
-        ) {
-            let next_index_range_starting_index = index_range_starting_indices.get(1);
-            let next_index_range_skip_amount = index_range_skip_amounts.get(1);
-
-            Self {
-                index_range_starting_indices,
-                index_range_skip_amounts,
-                index: *initial_index,
-                skipped: *initial_skip_amount,
-                next_range_index: 1,
-                next_index_range_starting_index,
-                next_index_range_skip_amount,
-                true_index: 0,
-                value_count,
-            }
-        } else {
-            Self {
-                index_range_starting_indices,
-                index_range_skip_amounts,
-                index: I::default(),
-                skipped: I::default(),
-                next_range_index: usize::MAX,
-                next_index_range_starting_index: None,
-                next_index_range_skip_amount: None,
-                true_index: usize::MAX,
-                value_count,
-            }
-        }
-    }
+    current_idx: I,
+    current_mem_idx: usize,
+    remaining_idx_begin: &'a [I],
+    remaining_mem_idx_begin: &'a [usize],
+    remaining_items: usize,
 }
 
 impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
     type Item = I;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.true_index < self.value_count {
-            let value = self.index;
-
-            self.index += I::ONE;
-            if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
-                self.next_index_range_starting_index,
-                self.next_index_range_skip_amount,
-            ) && *next_index_range_starting_index - self.index
-                <= *next_index_range_skip_amount - self.skipped
-            {
-                self.index = *next_index_range_starting_index;
-                self.skipped = *next_index_range_skip_amount;
-
-                self.next_range_index += 1;
-                self.next_index_range_starting_index =
-                    self.index_range_starting_indices.get(self.next_range_index);
-                self.next_index_range_skip_amount =
-                    self.index_range_skip_amounts.get(self.next_range_index);
-            }
-
-            self.true_index += 1;
-            Some(value)
-        } else {
-            None
+        if self.remaining_items == 0 {
+            return None;
         }
+        let result = self.current_idx;
+        self.remaining_items -= 1;
+        self.current_idx = self.current_idx + I::ONE;
+        self.current_mem_idx += 1;
+        if let Some(next_mem_idx) = self.remaining_mem_idx_begin.first()
+            && self.current_mem_idx == *next_mem_idx
+        {
+            self.current_idx = *self.remaining_idx_begin.split_off_first().unwrap();
+            self.current_mem_idx = *self.remaining_mem_idx_begin.split_off_first().unwrap();
+        }
+        Some(result)
     }
 }
 
@@ -130,11 +82,15 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
 
     #[must_use]
     pub fn indices(&self) -> impl Iterator<Item = I> {
-        NciArrayIndexIter::new(
-            self.index_range_starting_indices,
-            self.index_range_skip_amounts,
-            self.values.len(),
-        )
+        let idx_split = self.segments_idx_begin.split_first();
+        let mem_idx_split = self.segments_mem_idx_begin.split_first();
+        NciArrayIndexIter {
+            current_idx: idx_split.map(|split| *split.0).unwrap_or_default(),
+            current_mem_idx: mem_idx_split.map(|split| *split.0).unwrap_or_default(),
+            remaining_idx_begin: idx_split.map(|split| split.1).unwrap_or_default(),
+            remaining_mem_idx_begin: mem_idx_split.map(|split| split.1).unwrap_or_default(),
+            remaining_items: self.values.len(),
+        }
     }
 
     pub fn entries(&self) -> impl Iterator<Item = (I, &V)> {
@@ -142,68 +98,41 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
     }
 
     pub fn has_entry(&self, index: I) -> bool {
-        let range_index = match self.index_range_starting_indices.binary_search(&index) {
-            Ok(index) => index,
-            Err(index) => index.saturating_sub(1),
-        };
-
-        let index_range_starting_index = self
-            .index_range_starting_indices
-            .get(range_index)
-            .copied()
-            .unwrap_or_default();
-        let index_range_skipped = self
-            .index_range_skip_amounts
-            .get(range_index)
-            .copied()
-            .unwrap_or_default();
-
-        let true_starting_index = index_range_starting_index - index_range_skipped;
-
-        let index_range_end =
-            if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
-                self.index_range_starting_indices.get(range_index + 1),
-                self.index_range_skip_amounts.get(range_index + 1),
-            ) {
-                (index_range_starting_index
-                    + (*next_index_range_starting_index - *next_index_range_skip_amount)
-                    - true_starting_index)
-                    .as_usize()
-            } else {
-                index_range_starting_index.as_usize() + self.values.len()
-                    - true_starting_index.as_usize()
-            };
-
-        index >= index_range_starting_index && index.as_usize() < index_range_end
+        self.find_candidate_segment(index).is_some_and(|segment| {
+            let element_offset = index.as_usize() - self.segments_idx_begin[segment].as_usize();
+            element_offset < self.segment_len(segment)
+        })
     }
 
     pub fn get(&self, index: I) -> Option<&V> {
-        let range_index = match self.index_range_starting_indices.binary_search(&index) {
-            Ok(index) => index,
-            Err(index) => index.checked_sub(1)?,
-        };
+        if let Some(segment) = self.find_candidate_segment(index) {
+            let element_offset = index.as_usize() - self.segments_idx_begin[segment].as_usize();
+            if element_offset >= self.segment_len(segment) {
+                return None;
+            }
+            let element_mem_idx = self.segments_mem_idx_begin[segment] + element_offset;
+            Some(&self.values[element_mem_idx])
+        } else {
+            None
+        }
+    }
 
-        let index_range_starting_index = self
-            .index_range_starting_indices
-            .get(range_index)
-            .copied()
-            .unwrap_or_default();
-        let index_range_skipped = self
-            .index_range_skip_amounts
-            .get(range_index)
-            .copied()
-            .unwrap_or_default();
-        let slice_start = (index_range_starting_index - index_range_skipped).as_usize();
-        let slice_end =
-            if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
-                self.index_range_starting_indices.get(range_index + 1),
-                self.index_range_skip_amounts.get(range_index + 1),
-            ) {
-                (*next_index_range_starting_index - *next_index_range_skip_amount).as_usize()
-            } else {
-                self.values.len()
-            };
-        let slice: &[V] = &self.values[slice_start..slice_end];
-        slice.get((index - index_range_starting_index).as_usize())
+    /// Returns the segment that potentially contains the given index.
+    fn find_candidate_segment(&self, index: I) -> Option<usize> {
+        let candidate_segment_plus_one = self
+            .segments_idx_begin
+            .partition_point(|segment_idx_begin| index.ge(segment_idx_begin));
+        candidate_segment_plus_one.checked_sub(1)
+    }
+
+    /// Returns the length of the `i`-th segment.
+    /// Panics in case there are fewer than `i + 1` segments.
+    fn segment_len(&self, segment: usize) -> usize {
+        let mem_idx_begin = self.segments_mem_idx_begin[segment];
+        let mem_idx_end = *self
+            .segments_mem_idx_begin
+            .get(segment + 1)
+            .unwrap_or(&self.values.len());
+        mem_idx_end - mem_idx_begin
     }
 }
