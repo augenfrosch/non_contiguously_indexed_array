@@ -180,7 +180,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
     pub fn get(&self, index: I) -> Option<&V> {
         let range_index = match self.index_range_starting_indices.binary_search(&index) {
             Ok(index) => index,
-            Err(index) => index.saturating_sub(1),
+            Err(index) => index.checked_sub(1)?,
         };
 
         let index_range_starting_index = self
@@ -204,10 +204,6 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
                 self.values.len()
             };
         let slice: &[V] = &self.values[slice_start..slice_end];
-        if index >= index_range_starting_index {
-            slice.get((index - index_range_starting_index).as_usize())
-        } else {
-            None // TODO look into finding a better way of checking this
-        }
+        slice.get((index - index_range_starting_index).as_usize())
     }
 }

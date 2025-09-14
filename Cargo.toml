@@ -11,7 +11,7 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [workspace.dependencies]
-non_contiguously_indexed_array = { version = "0.3.0", path = "non_contiguously_indexed_array", default-features = false}
+non_contiguously_indexed_array = { version = "0.3.1", path = "non_contiguously_indexed_array", default-features = false}
 non_contiguously_indexed_array_builder = { version = "0.1.0", path = "non_contiguously_indexed_array_builder", default-features = false }
 
 [workspace.lints]
