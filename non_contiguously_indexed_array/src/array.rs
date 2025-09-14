@@ -39,7 +39,7 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
     }
 }
 
-pub struct NciArrayIndexIter<'a, I: NciIndex> {
+struct NciArrayIndexIter<'a, I: NciIndex> {
     index_range_starting_indices: &'a [I],
     index_range_skip_amounts: &'a [I],
     index: I,
