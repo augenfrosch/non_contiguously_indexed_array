@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy, Default)]
 pub struct NciArray<'a, I: NciIndex, V> {
     /// The user-defined index of the first element of each segment.
     /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
