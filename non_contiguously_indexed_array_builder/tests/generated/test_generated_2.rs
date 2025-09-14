@@ -1,6 +1,6 @@
 use non_contiguously_indexed_array::NciArray;
 
-pub const GENERATED_2: NciArray<u32, u32> = NciArray {
+pub const GENERATED_2: NciArray<usize, usize> = NciArray {
 	index_range_starting_indices: &[
 		100,
 		200,

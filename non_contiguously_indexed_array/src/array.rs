@@ -21,13 +21,13 @@ pub trait NciIndex:
     fn as_usize(self) -> usize;
 }
 
-impl NciIndex for u32 {
+impl NciIndex for usize {
     const ZERO: Self = 0;
     const ONE: Self = 1;
 
     #[inline]
     fn as_usize(self) -> usize {
-        self as usize
+        self
     }
 }
 
