@@ -25,9 +25,3 @@ impl_index_trait_for_primitive_num!(u16);
 impl_index_trait_for_primitive_num!(u32);
 impl_index_trait_for_primitive_num!(u64);
 impl_index_trait_for_primitive_num!(u128);
-
-impl_index_trait_for_primitive_num!(i8);
-impl_index_trait_for_primitive_num!(i16);
-impl_index_trait_for_primitive_num!(i32);
-impl_index_trait_for_primitive_num!(i64);
-impl_index_trait_for_primitive_num!(i128);
