@@ -1,4 +1,4 @@
-pub trait NciIndex: Ord + PartialOrd + Sized + Clone + Copy {
+pub trait NciIndex: Ord + Copy {
     /// Return the next index after this one, or `None` if this is the maximum possible index.
     fn next(self) -> Option<Self>;
 
