@@ -14,9 +14,4 @@ workspace = true
 crate-type = ["rlib"]
 
 [dependencies]
-log = { version = "0.4", optional = true}
 non_contiguously_indexed_array = { workspace = true }
-
-[features]
-default = ["log"]
-log = ["dep:log", "log/std"]

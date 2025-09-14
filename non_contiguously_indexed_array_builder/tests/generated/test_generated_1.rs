@@ -1,15 +1,15 @@
 use non_contiguously_indexed_array::NciArray;
 
 pub const GENERATED_1: NciArray<u32, u32> = NciArray {
-	index_range_starting_indices: &[
+	segments_idx_begin: &[
 		0,
 		10,
 		100,
 	],
-	index_range_skip_amounts: &[
+	segments_mem_idx_begin: &[
 		0,
-		7,
-		95,
+		3,
+		5,
 	],
 	values: &[
 		0,
