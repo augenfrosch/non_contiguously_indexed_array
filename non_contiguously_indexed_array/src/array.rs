@@ -7,7 +7,6 @@ pub struct NciArray<'a, I: NciIndex, V> {
 pub trait NciIndex:
     core::ops::Sub<Output = Self>
     + core::ops::Add<Output = Self>
-    + core::ops::AddAssign
     + Ord
     + PartialOrd
     + Sized
@@ -21,6 +20,16 @@ pub trait NciIndex:
 }
 
 impl NciIndex for usize {
+    const ZERO: Self = 0;
+    const ONE: Self = 1;
+}
+
+impl NciIndex for u8 {
+    const ZERO: Self = 0;
+    const ONE: Self = 1;
+}
+
+impl NciIndex for u16 {
     const ZERO: Self = 0;
     const ONE: Self = 1;
 }
@@ -92,7 +101,7 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
         if self.true_index < self.value_count {
             let value = self.index;
 
-            self.index += I::ONE;
+            self.index = self.index + I::ONE;
             if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
                 self.next_index_range_starting_index,
                 self.next_index_range_skip_amount,

@@ -85,7 +85,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
                 self.entries.retain(|(entry_index, _)| {
                     let index_as_expected = *entry_index == expected_index;
                     if index_as_expected {
-                        expected_index += I::ONE;
+                        expected_index = expected_index + I::ONE;
                     }
                     index_as_expected
                 });
@@ -176,7 +176,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
                 }
                 _ => ",",
             };
-            total_skip_amount += *skip_amount;
+            total_skip_amount = total_skip_amount + *skip_amount;
             write!(
                 output_string,
                 "{indentation_str}{indentation_str}{total_skip_amount:?}{comma_str}{new_line_str}"
