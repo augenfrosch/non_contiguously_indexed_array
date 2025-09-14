@@ -4,8 +4,8 @@ use constants::*;
 #[test]
 fn basic_array_test_1() {
     let arr = ARRAY_1;
-    let values_as_slice = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values_as_slice, ARRAY_1.values);
+    let values = arr.values().copied().collect::<Vec<_>>();
+    assert_eq!(values, ARRAY_1.values);
 
     assert_eq!(arr.get(0), Some(&0));
     assert_eq!(arr.get(1), Some(&1));
@@ -25,8 +25,8 @@ fn basic_array_test_1() {
 #[test]
 fn basic_array_test_2() {
     let arr = ARRAY_2;
-    let values_as_slice = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values_as_slice, ARRAY_2.values);
+    let values = arr.values().copied().collect::<Vec<_>>();
+    assert_eq!(values, ARRAY_2.values);
 
     assert_eq!(arr.get(0), None);
     assert_eq!(arr.get(1), None);

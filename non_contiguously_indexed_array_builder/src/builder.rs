@@ -27,14 +27,16 @@ pub struct BuildConfiguration {
     pub value_formatting: ValueFormatting,
 }
 
-impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> Default for NciArrayBuilder<I, V> {
+impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> Default
+    for NciArrayBuilder<I, V>
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<I, V> {
-    #[must_use] 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             entries_ordered_monotonically_increasing: true,
