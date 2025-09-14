@@ -61,7 +61,14 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
         let mut segments_mem_idx_begin = Vec::new();
 
         for mem_idx in 0..self.entries.len() {
-            if mem_idx == 0 || self.entries[mem_idx - 1].0 + I::ONE != self.entries[mem_idx].0 {
+            let new_segment = if mem_idx == 0 {
+                true
+            } else {
+                let prv_entry_idx = self.entries[mem_idx - 1].0;
+                let cur_entry_idx = self.entries[mem_idx].0;
+                prv_entry_idx.distance(cur_entry_idx) != Some(1)
+            };
+            if new_segment {
                 segments_idx_begin.push(self.entries[mem_idx].0);
                 segments_mem_idx_begin.push(mem_idx);
             }

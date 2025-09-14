@@ -1,3 +1,5 @@
+use crate::NciIndex;
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct NciArray<'a, I, V> {
     /// The user-defined index of the first element of each segment.
@@ -22,33 +24,6 @@ impl<'a, I, V> NciArray<'_, I, V> {
     }
 }
 
-pub trait NciIndex:
-    core::ops::Sub<Output = Self>
-    + core::ops::Add<Output = Self>
-    + core::ops::AddAssign
-    + Ord
-    + PartialOrd
-    + Sized
-    + Clone
-    + Copy
-    + Default
-{
-    const ZERO: Self;
-    const ONE: Self;
-
-    fn as_usize(self) -> usize;
-}
-
-impl NciIndex for u32 {
-    const ZERO: Self = 0;
-    const ONE: Self = 1;
-
-    #[inline]
-    fn as_usize(self) -> usize {
-        self as usize
-    }
-}
-
 impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
     type Output = V;
 
@@ -58,7 +33,7 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
 }
 
 struct NciArrayIndexIter<'a, I: NciIndex> {
-    current_idx: I,
+    current_idx: Option<I>,
     current_mem_idx: usize,
     remaining_idx_begin: &'a [I],
     remaining_mem_idx_begin: &'a [usize],
@@ -69,20 +44,23 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
     type Item = I;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining_items == 0 {
-            return None;
-        }
-        let result = self.current_idx;
-        self.remaining_items -= 1;
-        self.current_idx = self.current_idx + I::ONE;
-        self.current_mem_idx += 1;
-        if let Some(next_mem_idx) = self.remaining_mem_idx_begin.first()
-            && self.current_mem_idx == *next_mem_idx
+        if let Some(current_idx) = self.current_idx
+            && self.remaining_items > 0
         {
-            self.current_idx = *self.remaining_idx_begin.split_off_first().unwrap();
-            self.current_mem_idx = *self.remaining_mem_idx_begin.split_off_first().unwrap();
+            self.remaining_items -= 1;
+            if let Some(next_mem_idx) = self.remaining_mem_idx_begin.first()
+                && self.current_mem_idx + 1 == *next_mem_idx
+            {
+                self.current_idx = self.remaining_idx_begin.split_off_first().copied();
+                self.current_mem_idx = *self.remaining_mem_idx_begin.split_off_first().unwrap();
+            } else {
+                self.current_idx = current_idx.next();
+                self.current_mem_idx += 1;
+            }
+            Some(current_idx)
+        } else {
+            None
         }
-        Some(result)
     }
 }
 
@@ -96,7 +74,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         let idx_split = self.segments_idx_begin.split_first();
         let mem_idx_split = self.segments_mem_idx_begin.split_first();
         NciArrayIndexIter {
-            current_idx: idx_split.map(|split| *split.0).unwrap_or_default(),
+            current_idx: idx_split.map(|split| *split.0),
             current_mem_idx: mem_idx_split.map(|split| *split.0).unwrap_or_default(),
             remaining_idx_begin: idx_split.map(|split| split.1).unwrap_or_default(),
             remaining_mem_idx_begin: mem_idx_split.map(|split| split.1).unwrap_or_default(),
@@ -110,18 +88,18 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
 
     pub fn has_entry(&self, index: I) -> bool {
         self.find_candidate_segment(index).is_some_and(|segment| {
-            let element_offset = index.as_usize() - self.segments_idx_begin[segment].as_usize();
-            element_offset < self.segment_len(segment)
+            let distance = self.segments_idx_begin[segment].distance(index);
+            distance.is_some_and(|distance| distance < self.segment_len(segment))
         })
     }
 
     pub fn get(&self, index: I) -> Option<&V> {
         if let Some(segment) = self.find_candidate_segment(index) {
-            let element_offset = index.as_usize() - self.segments_idx_begin[segment].as_usize();
-            if element_offset >= self.segment_len(segment) {
+            let distance = self.segments_idx_begin[segment].distance(index)?;
+            if distance >= self.segment_len(segment) {
                 return None;
             }
-            let element_mem_idx = self.segments_mem_idx_begin[segment] + element_offset;
+            let element_mem_idx = self.segments_mem_idx_begin[segment] + distance;
             Some(&self.values[element_mem_idx])
         } else {
             None
