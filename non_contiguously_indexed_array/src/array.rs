@@ -14,21 +14,15 @@ pub trait NciIndex:
     + Clone
     + Copy
     + Default
+    + Into<usize>
 {
     const ZERO: Self;
     const ONE: Self;
-
-    fn as_usize(self) -> usize;
 }
 
 impl NciIndex for usize {
     const ZERO: Self = 0;
     const ONE: Self = 1;
-
-    #[inline]
-    fn as_usize(self) -> usize {
-        self
-    }
 }
 
 impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
@@ -168,13 +162,12 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
                 (index_range_starting_index
                     + (*next_index_range_starting_index - *next_index_range_skip_amount)
                     - true_starting_index)
-                    .as_usize()
+                    .into()
             } else {
-                index_range_starting_index.as_usize() + self.values.len()
-                    - true_starting_index.as_usize()
+                index_range_starting_index.into() + self.values.len() - true_starting_index.into()
             };
 
-        index >= index_range_starting_index && index.as_usize() < index_range_end
+        index >= index_range_starting_index && index.into() < index_range_end
     }
 
     pub fn get(&self, index: I) -> Option<&V> {
@@ -193,17 +186,17 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
             .get(range_index)
             .copied()
             .unwrap_or_default();
-        let slice_start = (index_range_starting_index - index_range_skipped).as_usize();
+        let slice_start = (index_range_starting_index - index_range_skipped).into();
         let slice_end =
             if let (Some(next_index_range_starting_index), Some(next_index_range_skip_amount)) = (
                 self.index_range_starting_indices.get(range_index + 1),
                 self.index_range_skip_amounts.get(range_index + 1),
             ) {
-                (*next_index_range_starting_index - *next_index_range_skip_amount).as_usize()
+                (*next_index_range_starting_index - *next_index_range_skip_amount).into()
             } else {
                 self.values.len()
             };
         let slice: &[V] = &self.values[slice_start..slice_end];
-        slice.get((index - index_range_starting_index).as_usize())
+        slice.get((index - index_range_starting_index).into())
     }
 }
