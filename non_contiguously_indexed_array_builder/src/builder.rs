@@ -1,11 +1,6 @@
 use non_contiguously_indexed_array::NciIndex;
 
 pub struct NciArrayBuilder<I: NciIndex, V> {
-    entries_ordered_monotonically_increasing: bool,
-    last_added_entry_index: Option<I>,
-    // Values of the format (start_index, skipped_since_last).
-    // The skip amounts are relative to the previous range as opposed to the final NciArray where they are absolute
-    index_ranges: Vec<(I, I)>,
     entries: Vec<(I, V)>,
 }
 
@@ -38,78 +33,22 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> Defa
 impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciArrayBuilder<I, V> {
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            entries_ordered_monotonically_increasing: true,
-            last_added_entry_index: None,
-            index_ranges: vec![],
-            entries: vec![],
-        }
+        Self { entries: vec![] }
     }
 
     pub fn entry(&mut self, index: I, value: V) {
-        if self.entries_ordered_monotonically_increasing {
-            if let Some(last_added_entry_index) = self.last_added_entry_index {
-                if index > last_added_entry_index {
-                    let index_difference = index - last_added_entry_index;
-                    if index_difference != I::ONE {
-                        self.index_ranges.push((index, index_difference - I::ONE));
-                    }
-                } else {
-                    if index == last_added_entry_index {
-                        #[cfg(feature = "log")]
-                        log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
-                    }
-                    self.entries_ordered_monotonically_increasing = false;
-                }
-            } else {
-                self.index_ranges.push((index, index));
-            }
-
-            self.last_added_entry_index = Some(index);
-            if !self.entries_ordered_monotonically_increasing {
-                self.last_added_entry_index = None;
-                self.index_ranges = vec![];
-            }
-        }
-
+        // #[cfg(feature = "log")]
+        // log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
         self.entries.push((index, value));
     }
 
     fn ensure_output_preconditions(&mut self) {
-        if !self.entries_ordered_monotonically_increasing {
-            self.entries
-                .sort_by(|(first_index, _), (second_index, _)| first_index.cmp(second_index));
-            {
-                // filter duplicate entries, first entry with index is retained
-                let mut expected_index = self.entries.first().unwrap().0;
-                self.entries.retain(|(entry_index, _)| {
-                    let index_as_expected = *entry_index == expected_index;
-                    if index_as_expected {
-                        expected_index += I::ONE;
-                    }
-                    index_as_expected
-                });
+        self.entries.sort_by_key(|(index, _value)| *index);
+        for window in self.entries.windows(2) {
+            if window[0].0 == window[1].0 {
+                panic!("Duplicate indices detected");
+                // TODO: better panic message
             }
-
-            for (index, value) in &self.entries {
-                if let Some(last_added_entry_index) = self.last_added_entry_index {
-                    if *index > last_added_entry_index {
-                        let index_difference = *index - last_added_entry_index;
-                        if index_difference != I::ONE {
-                            self.index_ranges.push((*index, index_difference - I::ONE));
-                        }
-                    } else {
-                        #[cfg(feature = "log")]
-                        log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
-                    }
-                } else {
-                    self.index_ranges.push((*index, *index));
-                }
-
-                self.last_added_entry_index = Some(*index);
-            }
-
-            self.entries_ordered_monotonically_increasing = true;
         }
     }
 
@@ -117,6 +56,23 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
         use std::fmt::Write as _;
 
         self.ensure_output_preconditions();
+
+        let mut segments_idx_begin = Vec::new();
+        let mut segments_mem_idx_begin = Vec::new();
+
+        for mem_idx in 0..self.entries.len() {
+            let new_segment = if mem_idx == 0 {
+                true
+            } else {
+                let prv_entry_idx = self.entries[mem_idx - 1].0;
+                let cur_entry_idx = self.entries[mem_idx].0;
+                prv_entry_idx.distance(cur_entry_idx) != Some(1)
+            };
+            if new_segment {
+                segments_idx_begin.push(self.entries[mem_idx].0);
+                segments_mem_idx_begin.push(mem_idx);
+            }
+        }
 
         let (struct_opening_str, struct_closing_str, array_opening_str, array_closing_str) =
             match build_config.output_format {
@@ -132,13 +88,13 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
 
         write!(
             output_string,
-            "{indentation_str}index_range_starting_indices:{space_str}{array_opening_str}{new_line_str}"
+            "{indentation_str}segments_idx_begin:{space_str}{array_opening_str}{new_line_str}"
         )
         .unwrap();
-        for (i, (starting_index, _)) in self.index_ranges.iter().enumerate() {
+        for (i, idx_begin) in segments_idx_begin.iter().enumerate() {
             let comma_str = match build_config.output_format {
                 OutputFormat::RON => {
-                    if i == self.index_ranges.len() - 1 {
+                    if i == segments_idx_begin.len() - 1 {
                         ""
                     } else {
                         ","
@@ -149,7 +105,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
             write!(
                 output_string,
                 "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
-                *starting_index
+                *idx_begin
             )
             .unwrap();
         }
@@ -161,14 +117,13 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
 
         write!(
             output_string,
-            "{indentation_str}index_range_skip_amounts:{space_str}{array_opening_str}{new_line_str}"
+            "{indentation_str}segments_mem_idx_begin:{space_str}{array_opening_str}{new_line_str}"
         )
         .unwrap();
-        let mut total_skip_amount = I::ZERO;
-        for (i, (_, skip_amount)) in self.index_ranges.iter().enumerate() {
+        for (i, mem_idx_begin) in segments_mem_idx_begin.iter().enumerate() {
             let comma_str = match build_config.output_format {
                 OutputFormat::RON => {
-                    if i == self.index_ranges.len() - 1 {
+                    if i == segments_mem_idx_begin.len() - 1 {
                         ""
                     } else {
                         ","
@@ -176,10 +131,10 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
                 }
                 _ => ",",
             };
-            total_skip_amount += *skip_amount;
             write!(
                 output_string,
-                "{indentation_str}{indentation_str}{total_skip_amount:?}{comma_str}{new_line_str}"
+                "{indentation_str}{indentation_str}{:?}{comma_str}{new_line_str}",
+                *mem_idx_begin
             )
             .unwrap();
         }
