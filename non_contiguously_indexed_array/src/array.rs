@@ -39,7 +39,7 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
     }
 }
 
-pub struct NciArrayIndexIter<'a, I: NciIndex> {
+struct NciArrayIndexIter<'a, I: NciIndex> {
     index_range_starting_indices: &'a [I],
     index_range_skip_amounts: &'a [I],
     index: I,
@@ -124,12 +124,12 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
 }
 
 impl<I: NciIndex, V> NciArray<'_, I, V> {
-    pub fn values(&self) -> core::slice::Iter<'_, V> {
+    pub fn values(&self) -> impl Iterator<Item = &V> {
         self.values.iter()
     }
 
-    #[must_use] 
-    pub fn indices(&self) -> NciArrayIndexIter<'_, I> {
+    #[must_use]
+    pub fn indices(&self) -> impl Iterator<Item = I> {
         NciArrayIndexIter::new(
             self.index_range_starting_indices,
             self.index_range_skip_amounts,
@@ -137,7 +137,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         )
     }
 
-    pub fn entries(&self) -> std::iter::Zip<NciArrayIndexIter<'_, I>, core::slice::Iter<'_, V>> {
+    pub fn entries(&self) -> impl Iterator<Item = (I, &V)> {
         self.indices().zip(self.values())
     }
 
