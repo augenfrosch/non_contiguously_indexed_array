@@ -11,7 +11,7 @@ The library takes inspiration from the design of [`rust-phf`](https://github.com
 The performance of the data structure is lower than that of `phf::OrderedMap` or similar. In a basic test, it was around 2 to 3 times slower, but this depends on the number of valid index ranges.
 Indexing requires a binary search over valid index ranges, with each iteration requiring a memory read, so the performance is proportional to the logarithm of the number of index ranges.
 
-The current data structure for the array is only space-efficient if the average length of continuous index ranges is long enough, as for each range, two values of the index type have to be stored. 
+The current data structure for the array is only space-efficient if the average length of continuous index ranges is long enough. The current implementation stores one value of the index type and one `usize` per index range. 
 
 ## Usage
 The current main way of generating a `non_contiguously_indexed_array::NciArray` is by Rust codegen via a `non_contiguously_indexed_array_builder::NciArrayBuilder`, e.g., using a build script.
