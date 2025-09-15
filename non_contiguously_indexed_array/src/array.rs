@@ -14,7 +14,7 @@ pub struct NciArray<'a, I, V> {
     pub values: &'a [V],
 }
 
-impl<'a, I, V> NciArray<'_, I, V> {
+impl<I, V> NciArray<'_, I, V> {
     pub const fn new() -> Self {
         Self {
             segments_idx_begin: &[],
@@ -69,7 +69,6 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
         self.values.iter()
     }
 
-    #[must_use]
     pub fn indices(&self) -> impl Iterator<Item = I> {
         let idx_split = self.segments_idx_begin.split_first();
         let mem_idx_split = self.segments_mem_idx_begin.split_first();
