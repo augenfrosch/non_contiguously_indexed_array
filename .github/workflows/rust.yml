@@ -20,9 +20,9 @@ jobs:
       - name: Check compilation
         run: cargo check --verbose --workspace --all-targets
       - name: Check formatting
-        run: cargo fmt --check
+        run: cargo fmt --verbose --check
       - name: Check for Clippy warnings
-        run: cargo clippy --verbose --workspace --all-targets |& tee >(cat) | (! grep --quiet --extended-regexp "generated [0-9]+ warning(s)?")
+        run: cargo clippy --verbose --workspace --all-targets -- --deny warnings
 
   test:
     name: Test
