@@ -37,18 +37,19 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
     }
 
     pub fn entry(&mut self, index: I, value: V) {
-        // #[cfg(feature = "log")]
-        // log::warn!("Duplicate index `{index:?}` with new value `{value:?}`");
         self.entries.push((index, value));
     }
 
     fn ensure_output_preconditions(&mut self) {
         self.entries.sort_by_key(|(index, _value)| *index);
         for window in self.entries.windows(2) {
-            if window[0].0 == window[1].0 {
-                panic!("Duplicate indices detected");
-                // TODO: better panic message
-            }
+            assert!(
+                window[0].0 != window[1].0,
+                "Duplicate indices detected! index: {:?}; values: {:?}, {:?}",
+                window[0].0,
+                window[0].1,
+                window[1].1
+            );
         }
     }
 

@@ -143,3 +143,12 @@ fn array_builder_test_5() {
         assert_eq!(generated::test_generated_5::GENERATED_5.get(i), Some(&i));
     }
 }
+
+#[test]
+#[should_panic]
+fn array_builder_test_panic_on_duplicate() {
+    let mut builder = NciArrayBuilder::new();
+    builder.entry(0, i8::MIN);
+    builder.entry(0, i8::MAX);
+    assert!(builder.build(&DEFAUTLT_BUILD_CONFIGURATION).is_empty()); // Assertion fails, but should never be executed
+}
