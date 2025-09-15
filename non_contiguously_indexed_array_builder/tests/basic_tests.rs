@@ -28,7 +28,6 @@ macro_rules! build_test_array {
         let path = path::absolute("./tests/generated")
             .unwrap()
             .join(format!("test_generated_{}.rs", $id));
-        dbg!(&path);
         let mut writer = BufWriter::new(File::create(path).unwrap());
         writeln!(
             writer,

@@ -3,6 +3,7 @@ macro_rules! basic_array_test_normal_case {
     ($a:tt, $( $i:expr ),*) => {
         $(
             assert_eq!($a.get($i), Some(&$i));
+			assert!($a.has_entry($i));
         )*
     };
 }
@@ -12,6 +13,7 @@ macro_rules! basic_array_test_edge_case {
     ($a:tt, $( $i:expr ),*) => {
         $(
             assert_eq!($a.get($i), None);
+			assert!(!$a.has_entry($i));
         )*
     };
 }
