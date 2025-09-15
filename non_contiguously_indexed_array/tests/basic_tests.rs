@@ -1,273 +1,191 @@
 mod constants;
 use constants::*;
+#[macro_use] // TODO: Import the macros properly, without needing to suppress warnings
+mod macros;
+
 use non_contiguously_indexed_array::NciIndex;
 
 #[test]
 fn basic_array_test_1() {
-    let arr = ARRAY_1;
-    let values = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values, ARRAY_1.values);
-
-    assert_eq!(arr.get(0), Some(&0));
-    assert_eq!(arr.get(1), Some(&1));
-    assert_eq!(*arr.get(1).unwrap(), arr[1]);
-    assert_eq!(arr.get(2), Some(&2));
-    assert_eq!(arr.get(5), None);
-    assert_eq!(arr.get(10), Some(&10));
-    assert_eq!(arr.get(11), Some(&11));
-    assert_eq!(*arr.get(11).unwrap(), arr[11]);
-    assert_eq!(arr.get(55), None);
-    assert_eq!(arr.get(99), None);
-    assert_eq!(arr.get(100), Some(&100));
-    assert_eq!(*arr.get(100).unwrap(), arr[100]);
-    assert_eq!(arr.get(101), None);
+    basic_array_test_normal_case!(ARRAY_1, 0, 1, 2, 10, 11, 100);
+    basic_array_test_edge_case!(ARRAY_1, 3, 5, 9, 55, 99, 101, 500);
 }
 
 #[test]
 fn basic_array_test_2() {
-    let arr = ARRAY_2;
-    let values = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values, ARRAY_2.values);
-
-    assert_eq!(arr.get(0), None);
-    assert_eq!(arr.get(1), None);
-    assert_eq!(arr.get(50), None);
-    assert_eq!(arr.get(99), None);
-    assert_eq!(arr.get(100), Some(&100));
-    assert_eq!(arr.get(101), Some(&101));
-    assert_eq!(*arr.get(101).unwrap(), arr[101]);
-    assert_eq!(arr.get(102), None);
-    assert_eq!(arr.get(150), None);
-    assert_eq!(arr.get(199), None);
-    assert_eq!(arr.get(200), Some(&200));
-    assert_eq!(*arr.get(200).unwrap(), arr[200]);
-    assert_eq!(arr.get(201), None);
-    assert_eq!(arr.get(350), None);
-    assert_eq!(arr.get(499), None);
-    assert_eq!(arr.get(500), Some(&500));
-    assert_eq!(arr.get(501), Some(&501));
-    assert_eq!(arr.get(502), Some(&502));
-    assert_eq!(*arr.get(502).unwrap(), arr[502]);
-    assert_eq!(arr.get(503), None);
-    assert_eq!(arr.get(750), None);
-    assert_eq!(arr.get(999), None);
+    basic_array_test_normal_case!(ARRAY_2, 100, 101, 200, 500, 501, 502);
+    basic_array_test_edge_case!(
+        ARRAY_2, 0, 1, 50, 99, 102, 150, 199, 201, 350, 499, 503, 750, 999
+    );
 }
 
 #[test]
 fn basic_array_test_3() {
-    let arr = ARRAY_3;
-    let values = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values, ARRAY_3.values);
-
-    assert_eq!(arr.get(-510), None);
-    assert_eq!(arr.get(-501), None);
-    assert_eq!(arr.get(-500), Some(&-500));
-    assert_eq!(arr.get(-499), Some(&-499));
-    assert_eq!(arr.get(-498), Some(&-498));
-    assert_eq!(arr.get(-497), None);
-    assert_eq!(arr.get(-495), None);
-    assert_eq!(arr.get(-490), Some(&-490));
-    assert_eq!(arr.get(-489), Some(&-489));
-    assert_eq!(arr.get(-488), None);
-    assert_eq!(arr.get(-445), None);
-    assert_eq!(arr.get(-401), None);
-    assert_eq!(arr.get(-400), Some(&-400));
-    assert_eq!(arr.get(-399), None);
+    basic_array_test_normal_case!(ARRAY_3, -500, -499, -498, -490, -489, -400);
+    basic_array_test_edge_case!(
+        ARRAY_3, -510, -501, -497, -495, -491, -488, -445, -401, -399, 0
+    );
 }
 
 #[test]
 fn basic_array_test_4() {
-    let arr = ARRAY_4;
-    let values = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values, ARRAY_4.values);
-
-    assert_eq!(arr.get(-510), None);
-    assert_eq!(arr.get(-501), None);
-    assert_eq!(arr.get(-500), Some(&-500));
-    assert_eq!(arr.get(-499), Some(&-499));
-    assert_eq!(arr.get(-250), None);
-    assert_eq!(arr.get(-10), None);
-    assert_eq!(arr.get(-3), None);
-    assert_eq!(arr.get(-2), Some(&-2));
-    assert_eq!(arr.get(-1), Some(&-1));
-    assert_eq!(arr.get(0), Some(&0));
-    assert_eq!(arr.get(1), Some(&1));
-    assert_eq!(arr.get(2), Some(&2));
-    assert_eq!(arr.get(3), None);
-    assert_eq!(arr.get(10), None);
-    assert_eq!(arr.get(250), None);
-    assert_eq!(arr.get(499), Some(&499));
-    assert_eq!(arr.get(500), Some(&500));
-    assert_eq!(arr.get(501), None);
+    basic_array_test_normal_case!(ARRAY_4, -500, -499, -2, -1, 0, 1, 2, 499, 500);
+    basic_array_test_edge_case!(
+        ARRAY_4, -510, -501, -498, -250, -10, -3, 3, 10, 250, 498, 501, 999
+    );
 }
 
 #[test]
 fn basic_array_test_5() {
-    let arr = ARRAY_5;
-    let values = arr.values().copied().collect::<Vec<_>>();
-    assert_eq!(values, ARRAY_5.values);
-
-    assert_eq!(arr.get(0), Some(&0));
-    assert_eq!(arr.get(1), Some(&1));
-    assert_eq!(arr.get(101), None);
-    assert_eq!(arr.get(u128::from(u64::MAX)), None);
-    assert_eq!(arr.get(u128::MAX / 2), Some(u128::MAX / 2).as_ref());
-    assert_eq!(arr.get(u128::MAX / 2 + 1), Some(u128::MAX / 2 + 1).as_ref());
-    assert_eq!(arr.get(u128::MAX / 2 + u128::MAX / 4), None);
-    assert_eq!(arr.get(u128::MAX - 2), None);
-    assert_eq!(arr.get(u128::MAX - 1), Some(u128::MAX - 1).as_ref());
-    assert_eq!(arr.get(u128::MAX), Some(u128::MAX).as_ref());
+    basic_array_test_normal_case!(
+        ARRAY_5,
+        0,
+        1,
+        u128::MAX / 2,
+        u128::MAX / 2 + 1,
+        u128::MAX - 1,
+        u128::MAX
+    );
+    basic_array_test_edge_case!(
+        ARRAY_5,
+        50,
+        101,
+        u128::from(u64::MAX),
+        u128::MAX / 2 + u128::MAX / 4,
+        u128::MAX - 2
+    );
 }
 
 #[test]
 fn basic_index_test_1() {
-    assert_eq!(0u32.next(), Some(1u32));
-    assert_eq!(41u32.next(), Some(42u32));
-    assert_eq!(u32::MAX.next(), None);
+    basic_next_test_normal_case!(
+        0u8,
+        5u16,
+        1000u32,
+        41u32,
+        u32::MAX - 1,
+        u64::MAX / 4,
+        u128::MAX / 2
+    );
+    basic_next_test_edge_case!(u8::MAX, u16::MAX, u32::MAX, u64::MAX, u128::MAX);
 
-    assert_eq!(0u32.distance(500), Some(500));
-    assert_eq!(42u32.distance(500), Some(500 - 42));
-
-    assert_eq!(42u32.distance(41), Some(1));
-    assert_eq!(500u32.distance(0), Some(500));
+    basic_distance_test_normal_case!(
+        (0u32, 500, 500),
+        (42u32, 500, 500 - 42),
+        (42u32, 41, 1),
+        (500u32, 0, 500)
+    );
 }
 
 #[test]
 fn basic_index_test_2() {
-    assert_eq!((-500i32).next(), Some(-499i32));
-    assert_eq!((-43i32).next(), Some(-42i32));
-    assert_eq!(0i32.next(), Some(1i32));
-    assert_eq!(41i32.next(), Some(42i32));
-    assert_eq!(i32::MIN.next(), Some(i32::MIN + 1));
-    assert_eq!(i32::MAX.next(), None);
+    basic_next_test_normal_case!(
+        -31i8,
+        -5i16,
+        -500i32,
+        -43i32,
+        0i32,
+        41i32,
+        i32::MIN,
+        i32::MAX - 1,
+        i64::MAX / 4,
+        i128::MIN,
+        i128::MAX / 2
+    );
+    basic_next_test_edge_case!(i8::MAX, i16::MAX, i32::MAX, i64::MAX, i128::MAX);
 
-    assert_eq!((-500i32).distance(500), Some(1000));
-    assert_eq!((-333i32).distance(-1), Some(332));
-    assert_eq!((-43i32).distance(-42), Some(1));
-    assert_eq!(0i32.distance(500), Some(500));
-    assert_eq!(42i32.distance(500), Some(500 - 42));
-
-    assert_eq!((-500i32).distance(-750), Some(250));
-    assert_eq!((-41i32).distance(-42), Some(1));
-    assert_eq!(1i32.distance(0), Some(1));
-    assert_eq!(42i32.distance(41), Some(1));
-    assert_eq!(500i32.distance(0), Some(500));
+    basic_distance_test_normal_case!(
+        (-500i32, 500, 1000),
+        (-333i32, -1, 332),
+        (-43i32, -42, 1),
+        (-500i32, -750, 250),
+        (42i32, 41, 1),
+        (500i32, 0, 500)
+    );
 }
 
 #[test]
 fn basic_index_test_3() {
-    assert_eq!(i8::MIN.distance(i8::MAX), Some(usize::from(u8::MAX)));
-    assert_eq!(i16::MIN.distance(i16::MAX), Some(usize::from(u16::MAX)));
+    basic_distance_test_normal_case!(
+        (i8::MIN, i8::MAX, usize::from(u8::MAX)),
+        (i16::MIN, i16::MAX, usize::from(u16::MAX))
+    );
 
+    #[cfg(target_pointer_width = "16")]
+    {
+        basic_distance_test_edge_case!(
+            (u32::MIN, u32::MAX),
+            (i32::MIN, i32::MAX),
+            (u64::MIN, u64::MAX),
+            (i64::MIN, i64::MAX)
+        );
+    }
+    #[cfg(target_pointer_width = "32")]
+    {
+        basic_distance_test_normal_case!((i32::MIN, i32::MAX, usize::try_from(u32::MAX).unwrap()));
+        basic_distance_test_edge_case!((u64::MIN, u64::MAX), (i64::MIN, i64::MAX));
+    }
+    #[cfg(target_pointer_width = "64")]
+    {
+        basic_distance_test_normal_case!(
+            (i32::MIN, i32::MAX, usize::try_from(u32::MAX).unwrap()),
+            (i64::MIN, i64::MAX, usize::try_from(u64::MAX).unwrap())
+        );
+    }
     #[cfg(any(
         target_pointer_width = "16",
         target_pointer_width = "32",
         target_pointer_width = "64"
     ))]
-    assert_eq!(u128::MIN.distance(u128::MAX), None);
+    basic_distance_test_edge_case!(
+        (u128::MIN, u128::MAX),
+        (i128::MIN, i128::MAX),
+        (i128::from(u64::MIN), i128::from(u64::MAX) + 1),
+        (i128::from(i64::MIN), i128::from(i64::MAX) + 1)
+    );
+}
+
+macro_rules! basic_iterator_test {
+    ($a:tt) => {
+        let mut entries = $a.entries();
+        let mut indices = $a.indices();
+        let mut values = $a.values();
+
+        while let (Some(entry), Some(index), Some(value)) =
+            (entries.next(), indices.next(), values.next())
+        {
+            assert_eq!(entry.0, index);
+            assert_eq!(entry.1, value);
+            assert_eq!(entry.0, *entry.1); // not generally true
+        }
+
+        assert_eq!(entries.next(), None);
+        assert_eq!(indices.next(), None);
+        assert_eq!(values.next(), None);
+    };
 }
 
 #[test]
-fn basic_array_iterator_test_1() {
-    let arr = ARRAY_1;
-
-    let mut entries = arr.entries();
-    let mut indices = arr.indices();
-    let mut values = arr.values();
-
-    while let (Some(entry), Some(index), Some(value)) =
-        (entries.next(), indices.next(), values.next())
-    {
-        assert_eq!(entry.0, index);
-        assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1); // not generally true
-    }
-
-    assert_eq!(entries.next(), None);
-    assert_eq!(indices.next(), None);
-    assert_eq!(values.next(), None);
+fn basic_iterator_test_array_1() {
+    basic_iterator_test!(ARRAY_1);
 }
 
 #[test]
-fn basic_array_iterator_test_2() {
-    let arr = ARRAY_2;
-
-    let mut entries = arr.entries();
-    let mut indices = arr.indices();
-    let mut values = arr.values();
-
-    while let (Some(entry), Some(index), Some(value)) =
-        (entries.next(), indices.next(), values.next())
-    {
-        assert_eq!(entry.0, index);
-        assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1); // not generally true
-    }
-
-    assert_eq!(entries.next(), None);
-    assert_eq!(indices.next(), None);
-    assert_eq!(values.next(), None);
+fn basic_iterator_test_array_2() {
+    basic_iterator_test!(ARRAY_2);
 }
 
 #[test]
-fn basic_array_iterator_test_3() {
-    let arr = ARRAY_3;
-
-    let mut entries = arr.entries();
-    let mut indices = arr.indices();
-    let mut values = arr.values();
-
-    while let (Some(entry), Some(index), Some(value)) =
-        (entries.next(), indices.next(), values.next())
-    {
-        assert_eq!(entry.0, index);
-        assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1); // not generally true
-    }
-
-    assert_eq!(entries.next(), None);
-    assert_eq!(indices.next(), None);
-    assert_eq!(values.next(), None);
+fn basic_iterator_test_array_3() {
+    basic_iterator_test!(ARRAY_3);
 }
 
 #[test]
-fn basic_array_iterator_test_4() {
-    let arr = ARRAY_4;
-
-    let mut entries = arr.entries();
-    let mut indices = arr.indices();
-    let mut values = arr.values();
-
-    while let (Some(entry), Some(index), Some(value)) =
-        (entries.next(), indices.next(), values.next())
-    {
-        assert_eq!(entry.0, index);
-        assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1); // not generally true
-    }
-
-    assert_eq!(entries.next(), None);
-    assert_eq!(indices.next(), None);
-    assert_eq!(values.next(), None);
+fn basic_iterator_test_array_4() {
+    basic_iterator_test!(ARRAY_4);
 }
 
 #[test]
 fn basic_array_iterator_test_5() {
-    let arr = ARRAY_5;
-
-    let mut entries = arr.entries();
-    let mut indices = arr.indices();
-    let mut values = arr.values();
-
-    while let (Some(entry), Some(index), Some(value)) =
-        (entries.next(), indices.next(), values.next())
-    {
-        assert_eq!(entry.0, index);
-        assert_eq!(entry.1, value);
-        assert_eq!(entry.0, *entry.1); // not generally true
-    }
-
-    assert_eq!(entries.next(), None);
-    assert_eq!(indices.next(), None);
-    assert_eq!(values.next(), None);
+    basic_iterator_test!(ARRAY_5);
 }
