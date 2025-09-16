@@ -94,6 +94,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
     }
 
     pub fn indices(&self) -> impl Iterator<Item = I> {
+        #[allow(clippy::option_if_let_else)] // Using map_or as suggested makes it unreadable
         if let Ok(mem_idx_end) = std::num::NonZero::try_from(self.values.len()) {
             // This assert improves performance by having a single panic check instead of
             // having separate panic checks for each of the indexing operations below.
