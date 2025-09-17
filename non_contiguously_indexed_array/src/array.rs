@@ -32,35 +32,59 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
     }
 }
 
-struct NciArrayIndexIter<'a, I: NciIndex> {
-    current_idx: Option<I>,
+struct NciArrayIndexIterData<'a, I> {
+    current_idx: I,
     current_mem_idx: usize,
     remaining_idx_begin: &'a [I],
     remaining_mem_idx_begin: &'a [usize],
-    remaining_items: usize,
+    mem_idx_end: std::num::NonZero<usize>,
+}
+
+enum NciArrayIndexIter<'a, I> {
+    NonEmpty(NciArrayIndexIterData<'a, I>),
+    Empty,
 }
 
 impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
     type Item = I;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(current_idx) = self.current_idx
-            && self.remaining_items > 0
-        {
-            self.remaining_items -= 1;
-            if let Some(next_mem_idx) = self.remaining_mem_idx_begin.first()
-                && self.current_mem_idx + 1 == *next_mem_idx
-            {
-                self.current_idx = self.remaining_idx_begin.split_off_first().copied();
-                self.current_mem_idx = *self.remaining_mem_idx_begin.split_off_first().unwrap();
-            } else {
-                self.current_idx = current_idx.next();
-                self.current_mem_idx += 1;
+        match self {
+            NciArrayIndexIter::NonEmpty(iter_data) => {
+                let result = iter_data.current_idx;
+                let next_mem_idx = iter_data.current_mem_idx + 1;
+                if next_mem_idx != iter_data.mem_idx_end.get()
+                    && let Some(next_idx) = result.next()
+                {
+                    iter_data.current_mem_idx = next_mem_idx;
+                    iter_data.current_idx = if let Some(next_segment_mem_idx) =
+                        iter_data.remaining_mem_idx_begin.first()
+                        && next_mem_idx == *next_segment_mem_idx
+                        && !iter_data.remaining_idx_begin.is_empty()
+                    {
+                        // Jump to next segment
+                        iter_data.remaining_mem_idx_begin.split_off_first();
+                        *iter_data.remaining_idx_begin.split_off_first().unwrap()
+                    } else {
+                        next_idx
+                    };
+                } else {
+                    *self = NciArrayIndexIter::Empty;
+                }
+                Some(result)
             }
-            Some(current_idx)
-        } else {
-            None
+            NciArrayIndexIter::Empty => None,
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = match self {
+            NciArrayIndexIter::NonEmpty(iter_data) => {
+                iter_data.mem_idx_end.get() - iter_data.current_mem_idx
+            }
+            NciArrayIndexIter::Empty => 0,
+        };
+        (remaining, Some(remaining))
     }
 }
 
@@ -70,14 +94,20 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
     }
 
     pub fn indices(&self) -> impl Iterator<Item = I> {
-        let idx_split = self.segments_idx_begin.split_first();
-        let mem_idx_split = self.segments_mem_idx_begin.split_first();
-        NciArrayIndexIter {
-            current_idx: idx_split.map(|split| *split.0),
-            current_mem_idx: mem_idx_split.map(|split| *split.0).unwrap_or_default(),
-            remaining_idx_begin: idx_split.map(|split| split.1).unwrap_or_default(),
-            remaining_mem_idx_begin: mem_idx_split.map(|split| split.1).unwrap_or_default(),
-            remaining_items: self.values.len(),
+        #[allow(clippy::option_if_let_else)] // Using map_or as suggested makes it unreadable
+        if let Ok(mem_idx_end) = std::num::NonZero::try_from(self.values.len()) {
+            // This assert improves performance by having a single panic check instead of
+            // having separate panic checks for each of the indexing operations below.
+            assert!(!self.segments_idx_begin.is_empty() && !self.segments_mem_idx_begin.is_empty());
+            NciArrayIndexIter::NonEmpty(NciArrayIndexIterData {
+                current_idx: self.segments_idx_begin[0],
+                current_mem_idx: 0,
+                remaining_idx_begin: &self.segments_idx_begin[1..],
+                remaining_mem_idx_begin: &self.segments_mem_idx_begin[1..],
+                mem_idx_end,
+            })
+        } else {
+            NciArrayIndexIter::Empty
         }
     }
 
