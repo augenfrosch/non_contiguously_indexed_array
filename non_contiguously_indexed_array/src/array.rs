@@ -24,7 +24,7 @@ impl<I, V> NciArray<'_, I, V> {
     }
 }
 
-impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
+impl<I: NciIndex, V> core::ops::Index<I> for NciArray<'_, I, V> {
     type Output = V;
 
     fn index(&self, index: I) -> &Self::Output {
@@ -37,7 +37,7 @@ struct NciArrayIndexIterData<'a, I> {
     current_mem_idx: usize,
     remaining_idx_begin: &'a [I],
     remaining_mem_idx_begin: &'a [usize],
-    mem_idx_end: std::num::NonZero<usize>,
+    mem_idx_end: core::num::NonZero<usize>,
 }
 
 enum NciArrayIndexIter<'a, I> {
@@ -95,7 +95,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
 
     pub fn indices(&self) -> impl Iterator<Item = I> {
         #[allow(clippy::option_if_let_else)] // Using map_or as suggested makes it unreadable
-        if let Ok(mem_idx_end) = std::num::NonZero::try_from(self.values.len()) {
+        if let Ok(mem_idx_end) = core::num::NonZero::try_from(self.values.len()) {
             // This assert improves performance by having a single panic check instead of
             // having separate panic checks for each of the indexing operations below.
             assert!(!self.segments_idx_begin.is_empty() && !self.segments_mem_idx_begin.is_empty());
