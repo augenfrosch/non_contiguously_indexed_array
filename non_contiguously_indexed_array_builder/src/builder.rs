@@ -77,19 +77,19 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
 
         let (struct_opening_str, struct_closing_str, array_opening_str, array_closing_str) =
             match build_config.output_format {
-                OutputFormat::RustCodegen => ("{", "}", "&[", "]"),
+                OutputFormat::RustCodegen => ("::new(", ")", "&[", "]"),
                 OutputFormat::RON | OutputFormat::RONPretty => ("(", ")", "(", ")"),
             };
-        let (new_line_str, indentation_str, space_str) = match build_config.output_format {
-            OutputFormat::RON => ("", "", ""),
-            _ => ("\n", "\t", " "),
+        let (new_line_str, indentation_str) = match build_config.output_format {
+            OutputFormat::RON => ("", ""),
+            _ => ("\n", "\t"),
         };
 
         let mut output_string = format!("{struct_opening_str}{new_line_str}");
 
         write!(
             output_string,
-            "{indentation_str}segments_idx_begin:{space_str}{array_opening_str}{new_line_str}"
+            "{indentation_str}{array_opening_str}{new_line_str}"
         )
         .unwrap();
         for (i, idx_begin) in segments_idx_begin.iter().enumerate() {
@@ -118,7 +118,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
 
         write!(
             output_string,
-            "{indentation_str}segments_mem_idx_begin:{space_str}{array_opening_str}{new_line_str}"
+            "{indentation_str}{array_opening_str}{new_line_str}"
         )
         .unwrap();
         for (i, mem_idx_begin) in segments_mem_idx_begin.iter().enumerate() {
@@ -147,7 +147,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
 
         write!(
             output_string,
-            "{indentation_str}values:{space_str}{array_opening_str}{new_line_str}",
+            "{indentation_str}{array_opening_str}{new_line_str}",
         )
         .unwrap();
         for (i, (_, value)) in self.entries.iter().enumerate() {

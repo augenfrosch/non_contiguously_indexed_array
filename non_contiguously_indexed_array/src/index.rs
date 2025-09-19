@@ -1,4 +1,4 @@
-pub trait NciIndex: Ord + Copy {
+pub const trait NciIndex: const Ord + Copy {
     /// Return the next index after this one, or `None` if this is the maximum possible index.
     fn next(self) -> Option<Self>;
 
@@ -9,7 +9,7 @@ pub trait NciIndex: Ord + Copy {
 
 macro_rules! impl_index_trait_for_primitive_num {
     ($t:ty) => {
-        impl NciIndex for $t {
+        impl const NciIndex for $t {
             fn next(self) -> Option<Self> {
                 self.checked_add(1)
             }

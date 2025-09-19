@@ -4,22 +4,37 @@ use crate::NciIndex;
 pub struct NciArray<'a, I, V> {
     /// The user-defined index of the first element of each segment.
     /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
-    pub segments_idx_begin: &'a [I],
+    segments_idx_begin: &'a [I],
 
     /// The memory index of the first element of each segment.
     /// Example: `segments_mem_idx_begin[2] = 3` means the first element of the third segment is stored in memory index 3.
-    pub segments_mem_idx_begin: &'a [usize],
+    segments_mem_idx_begin: &'a [usize],
 
     /// All the values stored in this array.
-    pub values: &'a [V],
+    values: &'a [V],
 }
 
-impl<I, V> NciArray<'_, I, V> {
-    pub const fn new() -> Self {
+impl<'a, I: const NciIndex, V> NciArray<'a, I, V> {
+    #[must_use]
+    pub const fn new(segments_idx_begin: &'a [I], segments_mem_idx_begin: &'a [usize], values: &'a [V]) -> Self {
+        assert!(segments_idx_begin.len() == segments_mem_idx_begin.len());
+        assert!(!segments_idx_begin.is_empty() && !segments_mem_idx_begin.is_empty());
+        let mut i = 0;
+        assert!(segments_mem_idx_begin[0] < values.len());
+        while i < (segments_idx_begin.len() - 1) { // for loops are not available in const functions
+            assert!(segments_idx_begin[i] < segments_idx_begin[i + 1]);
+
+            assert!(segments_mem_idx_begin[i] < segments_mem_idx_begin[i + 1]);
+            assert!(segments_mem_idx_begin[i + 1] < values.len());
+
+            assert!(segments_idx_begin[i].distance(segments_idx_begin[i + 1]).unwrap_or(usize::MAX) >= (segments_mem_idx_begin[i + 1] - segments_mem_idx_begin[i]));
+            i += 1;
+        }
+
         Self {
-            segments_idx_begin: &[],
-            segments_mem_idx_begin: &[],
-            values: &[],
+            segments_idx_begin,
+            segments_mem_idx_begin,
+            values,
         }
     }
 }
