@@ -32,7 +32,42 @@ impl<I: NciIndex, V> core::ops::Index<I> for NciArray<'_, I, V> {
     }
 }
 
+impl<'a, I: NciIndex, V> NciArray<'a, I, V> {
+    /// Attempt to create a `NciArray` from the given raw parts.
+    /// 
+    /// # Errors
+    /// 
+    /// Returns an `Err` variant if the raw parts don't fulfill all of the required invariants.
+    pub fn try_from_raw_parts(
+        segments_idx_begin: &'a [I],
+        segments_mem_idx_begin: &'a [usize],
+        values: &'a [V],
+    ) -> Result<Self, ()> {
+        let candidate = Self {
+            segments_idx_begin,
+            segments_mem_idx_begin,
+            values,
+        };
+        if candidate.fulfills_invariants() {
+            Ok(candidate)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl<I: NciIndex, V> NciArray<'_, I, V> {
+    /// Checks if the array fulfills all segment data invariants.
+    /// If `false` would be returned when called, running any other function has no guarantee to result in correct behaviour.
+    /// `NciArrayBuilder` checks the invariants during codegen, therefore guaranteeing that `NciArray`s generated using it are safe to use.
+    pub fn fulfills_invariants(&self) -> bool {
+        crate::check_segment_data_invariants(
+            self.segments_idx_begin,
+            self.segments_mem_idx_begin,
+            self.values.len(),
+        )
+    }
+
     pub fn values(&self) -> impl ExactSizeIterator<Item = &V> {
         self.values.iter()
     }
