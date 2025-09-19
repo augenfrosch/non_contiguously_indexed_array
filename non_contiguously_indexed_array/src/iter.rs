@@ -5,7 +5,7 @@ pub struct NciArrayIndexIterData<'a, I> {
     current_mem_idx: usize,
     remaining_idx_begin: &'a [I],
     remaining_mem_idx_begin: &'a [usize],
-    mem_idx_end: std::num::NonZero<usize>,
+    mem_idx_end: core::num::NonZero<usize>,
 }
 
 pub enum NciArrayIndexIter<'a, I> {
@@ -16,7 +16,7 @@ pub enum NciArrayIndexIter<'a, I> {
 impl<'a, I: NciIndex> NciArrayIndexIter<'a, I> {
     pub fn new<V>(arr: &'a NciArray<'_, I, V>) -> Self {
         #[allow(clippy::option_if_let_else)] // Using map_or as suggested makes it unreadable
-        if let Ok(mem_idx_end) = std::num::NonZero::try_from(arr.values.len()) {
+        if let Ok(mem_idx_end) = core::num::NonZero::try_from(arr.values.len()) {
             // This assert improves performance by having a single panic check instead of
             // having separate panic checks for each of the indexing operations below.
             assert!(!arr.segments_idx_begin.is_empty() && !arr.segments_mem_idx_begin.is_empty());
