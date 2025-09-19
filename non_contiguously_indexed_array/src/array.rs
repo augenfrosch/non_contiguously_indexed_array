@@ -19,16 +19,25 @@ impl<'a, I: const NciIndex, V> NciArray<'a, I, V> {
     pub const fn new(segments_idx_begin: &'a [I], segments_mem_idx_begin: &'a [usize], values: &'a [V]) -> Self {
         assert!(segments_idx_begin.len() == segments_mem_idx_begin.len());
         assert!(!segments_idx_begin.is_empty() && !segments_mem_idx_begin.is_empty());
-        let mut i = 0;
-        assert!(segments_mem_idx_begin[0] < values.len());
-        while i < (segments_idx_begin.len() - 1) { // for loops are not available in const functions
-            assert!(segments_idx_begin[i] < segments_idx_begin[i + 1]);
+        let mut segment = 0;
+        assert!(segments_mem_idx_begin[0] < values.len()); // TODO look into `next` at overflow boundary conditions; it is probably missing checks
+        while segment < (segments_idx_begin.len() - 1) { // for loops are not available in const functions
+            assert!(segments_idx_begin[segment] < segments_idx_begin[segment + 1]);
 
-            assert!(segments_mem_idx_begin[i] < segments_mem_idx_begin[i + 1]);
-            assert!(segments_mem_idx_begin[i + 1] < values.len());
+            assert!(segments_mem_idx_begin[segment] < segments_mem_idx_begin[segment + 1]);
+            assert!(segments_mem_idx_begin[segment + 1] < values.len());
 
-            assert!(segments_idx_begin[i].distance(segments_idx_begin[i + 1]).unwrap_or(usize::MAX) >= (segments_mem_idx_begin[i + 1] - segments_mem_idx_begin[i]));
-            i += 1;
+            assert!(segments_idx_begin[segment].distance(segments_idx_begin[segment + 1]).unwrap_or(usize::MAX) >= (segments_mem_idx_begin[segment + 1] - segments_mem_idx_begin[segment])); // TODO look into >=, maybe > would restrict the representation to the canonical / most space efficient representation
+            segment += 1;
+        }
+        let mut idx = segments_idx_begin[segments_idx_begin.len() - 1];
+        let mut mem_idx = segments_mem_idx_begin[segments_mem_idx_begin.len() - 1];
+        while mem_idx < values.len() - 1 { // TODO check if this - 1 is correct; it should be since idx.next() corresponds to the NciIndex of the element at mem_idx+1
+            let next_idx = idx.next();
+            assert!(next_idx.is_some());
+
+            mem_idx += 1;
+            idx = next_idx.unwrap();
         }
 
         Self {
