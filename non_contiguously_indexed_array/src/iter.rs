@@ -66,12 +66,18 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let remaining = match self {
+        let remaining = self.len();
+        (remaining, Some(remaining))
+    }
+}
+
+impl<I: NciIndex> ExactSizeIterator for NciArrayIndexIter<'_, I> {
+    fn len(&self) -> usize {
+        match self {
             NciArrayIndexIter::NonEmpty(iter_data) => {
                 iter_data.mem_idx_end.get() - iter_data.current_mem_idx
             }
             NciArrayIndexIter::Empty => 0,
-        };
-        (remaining, Some(remaining))
+        }
     }
 }

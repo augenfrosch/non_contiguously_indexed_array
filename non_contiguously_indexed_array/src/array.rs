@@ -33,15 +33,15 @@ impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
 }
 
 impl<I: NciIndex, V> NciArray<'_, I, V> {
-    pub fn values(&self) -> impl Iterator<Item = &V> {
+    pub fn values(&self) -> impl Iterator<Item = &V> + ExactSizeIterator {
         self.values.iter()
     }
 
-    pub fn indices(&self) -> impl Iterator<Item = I> {
+    pub fn indices(&self) -> impl Iterator<Item = I> + ExactSizeIterator {
         NciArrayIndexIter::new(self)
     }
 
-    pub fn entries(&self) -> impl Iterator<Item = (I, &V)> {
+    pub fn entries(&self) -> impl Iterator<Item = (I, &V)> + ExactSizeIterator {
         self.indices().zip(self.values())
     }
 
