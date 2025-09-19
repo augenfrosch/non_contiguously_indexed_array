@@ -24,7 +24,7 @@ impl<I, V> NciArray<'_, I, V> {
     }
 }
 
-impl<I: NciIndex, V> std::ops::Index<I> for NciArray<'_, I, V> {
+impl<I: NciIndex, V> core::ops::Index<I> for NciArray<'_, I, V> {
     type Output = V;
 
     fn index(&self, index: I) -> &Self::Output {
