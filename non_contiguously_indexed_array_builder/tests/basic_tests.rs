@@ -31,7 +31,7 @@ macro_rules! build_test_array {
         let mut writer = BufWriter::new(File::create(path).unwrap());
         writeln!(
             writer,
-            "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_{}: NciArray<{}, {}> = NciArray {};",
+            "use non_contiguously_indexed_array::NciArray;\n\npub const GENERATED_{}: NciArray<{}, {}> = NciArray{};",
             $id,
             $ty.0,
             $ty.1,

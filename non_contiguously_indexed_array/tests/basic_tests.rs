@@ -3,7 +3,16 @@ use constants::*;
 #[macro_use] // TODO: Import the macros properly, without needing to suppress warnings
 mod macros;
 
-use non_contiguously_indexed_array::NciIndex;
+use non_contiguously_indexed_array::{NciArray, NciIndex};
+
+#[test]
+fn test_try() {
+    const TEST: NciArray<u32, u32> = NciArray::new(&[0, 10, 100],
+        &[0, 3, 5],
+        &[0, 1, 2, 10, 11, 100],
+    );
+    dbg!(TEST);
+}
 
 #[test]
 fn basic_array_test_1() {

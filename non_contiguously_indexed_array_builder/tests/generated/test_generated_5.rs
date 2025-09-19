@@ -1,13 +1,13 @@
 use non_contiguously_indexed_array::NciArray;
 
-pub const GENERATED_5: NciArray<i8, i8> = NciArray {
-	segments_idx_begin: &[
+pub const GENERATED_5: NciArray<i8, i8> = NciArray::new(
+	&[
 		-128,
 	],
-	segments_mem_idx_begin: &[
+	&[
 		0,
 	],
-	values: &[
+	&[
 		-128,
 		-127,
 		-126,
@@ -265,4 +265,4 @@ pub const GENERATED_5: NciArray<i8, i8> = NciArray {
 		126,
 		127,
 	],
-};
+);
