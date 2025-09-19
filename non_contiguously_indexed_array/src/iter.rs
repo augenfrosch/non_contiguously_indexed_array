@@ -41,9 +41,7 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
             NciArrayIndexIter::NonEmpty(iter_data) => {
                 let result = iter_data.current_idx;
                 let next_mem_idx = iter_data.current_mem_idx + 1;
-                if next_mem_idx != iter_data.mem_idx_end.get()
-                    && let Some(next_idx) = result.next()
-                {
+                if next_mem_idx != iter_data.mem_idx_end.get() {
                     iter_data.current_mem_idx = next_mem_idx;
                     iter_data.current_idx = if let Some(next_segment_mem_idx) =
                         iter_data.remaining_mem_idx_begin.first()
@@ -54,7 +52,10 @@ impl<I: NciIndex> Iterator for NciArrayIndexIter<'_, I> {
                         iter_data.remaining_mem_idx_begin.split_off_first();
                         *iter_data.remaining_idx_begin.split_off_first().unwrap()
                     } else {
-                        next_idx
+                        // If the data structure was properly constructed, `result.next()` should never yield `None` here.
+                        // Using `unwrap_or` here is a deliberate decision to avoid generating a panic handler
+                        // and also ensures that the iterator always returns exactly `self.len()` elements.
+                        result.next().unwrap_or(result)
                     };
                 } else {
                     *self = NciArrayIndexIter::Empty;
