@@ -75,6 +75,15 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
             }
         }
 
+        assert!(
+            non_contiguously_indexed_array::check_segment_data_invariants(
+                &segments_idx_begin,
+                &segments_mem_idx_begin,
+                self.entries.len(),
+            ),
+            "Segment data does not fulfill invariants!"
+        );
+
         let (struct_opening_str, struct_closing_str, array_opening_str, array_closing_str) =
             match build_config.output_format {
                 OutputFormat::RustCodegen => ("{", "}", "&[", "]"),
