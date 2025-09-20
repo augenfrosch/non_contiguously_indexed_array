@@ -1,13 +1,14 @@
 pub trait NciIndex: Ord + Copy {
-    /// Return the next index after this one, or `None` if this is the maximum possible index.
-    /// The implementation must guarantee that if `Some(value)` is returned `value > next`.
-    /// If this is not the case, any `NciArray` using the implementation will function incorrectly.
+    /// Return the next index after this one, or `None` if there is no directly following index, for example, when `self` it the maximum possible index.
+    /// The implementation should guarantee that if `Some(value)` is returned `value > self`.
+    /// Additionally, it should also try to ensure that there exists no other value between `self` and the result if `Some(value)` is returned,
+    /// this is to ensure the correctness and an efficient representation of any `NciArray` using the implementation, as it relies on the total order and binary search.
+    /// If these ewquirements are not guaranteed by the implementation, it is possible that some `NciArray`s using the implementation cannot be constructed without violated invariants.
     fn next(self) -> Option<Self>;
 
     /// Return the distance between `self` and `other`.
     /// If the distance is greater than `usize::MAX`, return `None`.
-    /// If `other > self`, the implementation must guarantee that `next` can be called at least the returned distance times without returning `None`,
-    /// and at least `usize::MAX` if the returned distance is `None`.
+    /// If `other > self` and the function returned `Some(distance)`, the implementation must guarantee that `next` can be called `distance` times to reach `other` without returning `None`.
     /// If this is not the case, any `NciArray` using the implementation will function incorrectly.
     fn distance(self, other: Self) -> Option<usize>;
 }

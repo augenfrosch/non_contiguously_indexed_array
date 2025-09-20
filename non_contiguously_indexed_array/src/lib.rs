@@ -14,8 +14,10 @@ pub enum NciArrayInvariant {
     EntriesStartAtMemoryIndexZero,
     IsEmptyEquivalent,
     MemoryIndicesInBounds,
+    NciIndexCalculatesCorrectDistanceForAllEntries,
     NciIndexCanGenerateIndicesForAllEntries,
-    SegmentDataMinimal, // could also be called something like `SegmentsSeparated`
+    SegmentsDisjoint,
+    SegmentDataMinimal,
     SegmentDataElementsStrictlyMonotonic,
     SegmentDataLengthEquivalent,
 }
@@ -67,32 +69,54 @@ pub fn check_segment_data_invariants<I: NciIndex>(
             return Err(NciArrayInvariant::SegmentDataElementsStrictlyMonotonic);
         }
 
-        // Distance to the next representative index must be greater than the number of entries of the segment.
-        // Note that the current representation would still work if the distance is equals to the number of entries,
-        // however, this would indicate the construction is not as space efficient as it could be, since the segments could be merged into one.
-        // Testing for it to be strictly greater restricts the representation to be unique.
-        // For example, when accepting equals, ([1, 2, 4]; [0, 1, 3]) would be a valid, even though it could be reduced to ([1]; [0]).
-        // TODO: This currently assumes that NciArray is implemented correctly. Determine if this is acceptable or replace with for loop similar to below + strict monotonicity check (which would then also be needed below)
-        match segments_idx_begin[segment]
-            .distance(segments_idx_begin[segment + 1])
-            .unwrap_or(usize::MAX)
-            .cmp(&(segments_mem_idx_begin[segment + 1] - segments_mem_idx_begin[segment]))
-        {
-            core::cmp::Ordering::Less => {
+        // It must be possible to generate indices for each element of the segment and the calculated distance must match.
+        let idx_begin = segments_idx_begin[segment];
+        let mem_idx_begin = segments_mem_idx_begin[segment];
+        let mut idx = idx_begin;
+        for mem_idx in (mem_idx_begin + 1)..segments_mem_idx_begin[segment + 1] {
+            if let Some(next_idx) = idx.next() {
+                // The indices generated within a segment must be between the representative indices.
+                // An index outside of those bounds would result in some values being unused since the binary search would select a different segment.
+                if next_idx >= segments_idx_begin[segment + 1] || next_idx < idx_begin {
+                    return Err(NciArrayInvariant::SegmentsDisjoint);
+                }
+                if let Some(distance) = idx_begin.distance(next_idx)
+                    && distance == (mem_idx - mem_idx_begin)
+                {
+                    idx = next_idx;
+                } else {
+                    return Err(NciArrayInvariant::NciIndexCalculatesCorrectDistanceForAllEntries);
+                }
+            } else {
                 return Err(NciArrayInvariant::NciIndexCanGenerateIndicesForAllEntries);
             }
-            core::cmp::Ordering::Equal => return Err(NciArrayInvariant::SegmentDataMinimal),
-            core::cmp::Ordering::Greater => {} // fulfills both invariants
+        }
+
+        // Two following segments must be separated (by at least one index).
+        // Note that the current representation would still work if they are not separated,
+        // however, this would indicate the construction is not as space efficient as it could be, since the segments could be merged into one.
+        // For example, when if not checked, ([1, 2, 4]; [0, 1, 3]) would be a valid, even though it could be reduced to ([1]; [0]).
+        if let Some(next_idx) = idx.next()
+            && next_idx == segments_idx_begin[segment + 1]
+        {
+            return Err(NciArrayInvariant::SegmentDataMinimal);
         }
     }
 
     // Test invariants of last segment since it has no successor to check against.
-    // For each entry, check if the generation of the next index is successful.
-    // The check is skipped for the final entry since no further index has to be generated.
-    let mut idx = segments_idx_begin[segments_idx_begin.len() - 1];
-    for _mem_idx in segments_mem_idx_begin[segments_mem_idx_begin.len() - 1]..(values_len - 1) {
+    // For each entry, check if the generation of the next index is successful and the calculated distance match.
+    let idx_begin = segments_idx_begin[segments_idx_begin.len() - 1];
+    let mem_idx_begin = segments_mem_idx_begin[segments_idx_begin.len() - 1];
+    let mut idx = idx_begin;
+    for mem_idx in (mem_idx_begin + 1)..values_len {
         if let Some(next_idx) = idx.next() {
-            idx = next_idx;
+            if let Some(distance) = idx_begin.distance(next_idx)
+                && distance == (mem_idx - mem_idx_begin)
+            {
+                idx = next_idx;
+            } else {
+                return Err(NciArrayInvariant::NciIndexCalculatesCorrectDistanceForAllEntries);
+            }
         } else {
             return Err(NciArrayInvariant::NciIndexCanGenerateIndicesForAllEntries);
         }
