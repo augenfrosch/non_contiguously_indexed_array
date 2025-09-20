@@ -1,4 +1,4 @@
-use crate::{NciArrayIndexIter, NciIndex};
+use crate::{NciArrayIndexIter, NciArrayInvariant, NciIndex};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct NciArray<'a, I, V> {
@@ -34,25 +34,25 @@ impl<I: NciIndex, V> core::ops::Index<I> for NciArray<'_, I, V> {
 
 impl<'a, I: NciIndex, V> NciArray<'a, I, V> {
     /// Attempt to create a `NciArray` from the given raw parts.
-    /// 
+    ///
     /// # Errors
-    /// 
-    /// Returns an `Err` variant if the raw parts don't fulfill all of the required invariants.
+    ///
+    /// Returns an `Err` variant containing the first invariant found to be violated by the raw parts.
     pub fn try_from_raw_parts(
         segments_idx_begin: &'a [I],
         segments_mem_idx_begin: &'a [usize],
         values: &'a [V],
-    ) -> Result<Self, ()> {
-        let candidate = Self {
+    ) -> Result<Self, NciArrayInvariant> {
+        crate::check_segment_data_invariants(
+            segments_idx_begin,
+            segments_mem_idx_begin,
+            values.len(),
+        )
+        .map(|()| Self {
             segments_idx_begin,
             segments_mem_idx_begin,
             values,
-        };
-        if candidate.fulfills_invariants() {
-            Ok(candidate)
-        } else {
-            Err(())
-        }
+        })
     }
 }
 
@@ -66,6 +66,7 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
             self.segments_mem_idx_begin,
             self.values.len(),
         )
+        .is_ok()
     }
 
     pub fn values(&self) -> impl ExactSizeIterator<Item = &V> {

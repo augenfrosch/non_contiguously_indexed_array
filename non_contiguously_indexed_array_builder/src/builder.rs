@@ -80,7 +80,7 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
                 &segments_idx_begin,
                 &segments_mem_idx_begin,
                 self.entries.len(),
-            ),
+            ).is_ok(),
             "Segment data does not fulfill invariants!"
         );
 
