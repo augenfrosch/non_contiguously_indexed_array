@@ -110,6 +110,10 @@ pub fn check_segment_data_invariants<I: NciIndex>(
     let mut idx = idx_begin;
     for mem_idx in (mem_idx_begin + 1)..values_len {
         if let Some(next_idx) = idx.next() {
+            // Same as above, but only with a lower bound since this is the last segment
+            if next_idx < idx_begin {
+                return Err(NciArrayInvariant::SegmentsDisjoint);
+            }
             if let Some(distance) = idx_begin.distance(next_idx)
                 && distance == (mem_idx - mem_idx_begin)
             {
