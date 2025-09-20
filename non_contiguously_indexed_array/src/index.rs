@@ -4,6 +4,9 @@ pub trait NciIndex: Ord + Copy {
 
     /// Return the distance between `self` and `other`.
     /// If the distance is greater than `usize::MAX`, return `None`.
+    /// If `other > self`, the implementation must guarantee that `next` can be called at least the returned distance times without returning `None`,
+    /// and at least `usize::MAX` if the returned distance is `None`.
+    /// If this is not the case, any `NciArray` using the implementation will function incorrectly.
     fn distance(self, other: Self) -> Option<usize>;
 }
 
