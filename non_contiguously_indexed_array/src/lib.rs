@@ -9,7 +9,7 @@ pub use index::*;
 mod iter;
 use iter::*;
 
-/// Checks if provided `NciArray` segment data fulfills all invariants.
+/// Checks if provided `NciArray` segment data fulfills all invariants. The function assumes that the `NciIndex` is implemented correctly.
 /// If `true` is returned, the data is safe to use to instantiate a `NciArray` struct, otherwise doing so will cause it to function incorrectly.
 pub fn check_segment_data_invariants<I: NciIndex>(
     segments_idx_begin: &[I],
