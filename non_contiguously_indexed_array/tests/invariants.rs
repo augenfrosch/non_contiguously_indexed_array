@@ -211,9 +211,9 @@ fn custom_nci_index_next_segments_disjoint_test() {
         // Goes 0 2 1 3 5 4 6 8 7 ...
         fn next(self) -> Option<Self> {
             if (self.0 % 3) == 2 {
-                self.0.checked_sub(1).map(|i| ZigZagIndex(i))
+                self.0.checked_sub(1).map(Self)
             } else {
-                self.0.checked_add(2).map(|i| ZigZagIndex(i))
+                self.0.checked_add(2).map(Self)
             }
         }
 
@@ -279,7 +279,7 @@ fn custom_nci_index_distance_invariant_test() {
     struct OverestimatingIndex(u32);
     impl NciIndex for OverestimatingIndex {
         fn next(self) -> Option<Self> {
-            self.0.checked_add(1).map(|i| OverestimatingIndex(i))
+            self.0.checked_add(1).map(Self)
         }
 
         fn distance(self, other: Self) -> Option<usize> {
@@ -310,7 +310,7 @@ fn custom_nci_index_distance_invariant_test() {
         fn next(self) -> Option<Self> {
             self.0
                 .checked_add(1)
-                .map(|i| ExtremelyOverestimatingIndex(i))
+                .map(Self)
         }
 
         fn distance(self, _other: Self) -> Option<usize> {
@@ -345,7 +345,7 @@ fn custom_nci_index_distance_invariant_test() {
     struct UnderestimatingIndex(u32);
     impl NciIndex for UnderestimatingIndex {
         fn next(self) -> Option<Self> {
-            self.0.checked_add(1).map(|i| UnderestimatingIndex(i))
+            self.0.checked_add(1).map(Self)
         }
 
         fn distance(self, other: Self) -> Option<usize> {
