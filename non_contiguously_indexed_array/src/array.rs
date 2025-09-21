@@ -4,13 +4,16 @@ use crate::{NciArrayIndexIter, NciArrayInvariant, NciIndex};
 pub struct NciArray<'a, I, V> {
     /// The user-defined index of the first element of each segment.
     /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
+    #[doc(hidden)]
     pub segments_idx_begin: &'a [I],
 
     /// The memory index of the first element of each segment.
     /// Example: `segments_mem_idx_begin[2] = 3` means the first element of the third segment is stored in memory index 3.
+    #[doc(hidden)]
     pub segments_mem_idx_begin: &'a [usize],
 
     /// All the values stored in this array.
+    #[doc(hidden)]
     pub values: &'a [V],
 }
 
@@ -60,6 +63,8 @@ impl<I: NciIndex, V> NciArray<'_, I, V> {
     /// Checks if the array fulfills all segment data invariants.
     /// If `false` would be returned when called, running any other function has no guarantee to result in correct behaviour.
     /// `NciArrayBuilder` checks the invariants during codegen, therefore guaranteeing that `NciArray`s generated using it are safe to use.
+    /// However, if the version of this crate is updated without regenerating the array, there is no longer a guarantee,
+    /// thererfore it is recommended to add tests with the assertion that this function returns `true`.
     pub fn fulfills_invariants(&self) -> bool {
         crate::check_segment_data_invariants(
             self.segments_idx_begin,
