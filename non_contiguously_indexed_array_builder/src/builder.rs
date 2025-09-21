@@ -67,13 +67,25 @@ impl<I: NciIndex + std::fmt::Debug, V: std::fmt::Display + std::fmt::Debug> NciA
             } else {
                 let prv_entry_idx = self.entries[mem_idx - 1].0;
                 let cur_entry_idx = self.entries[mem_idx].0;
-                prv_entry_idx.distance(cur_entry_idx) != Some(1)
+                // This was peviously `prv_entry_idx.distance(cur_entry_idx) != Some(1)`.
+                // The new condition should more closely correspond to the updated correctness conditions for `NciIndex`
+                prv_entry_idx.next() != Some(cur_entry_idx)
             };
             if new_segment {
                 segments_idx_begin.push(self.entries[mem_idx].0);
                 segments_mem_idx_begin.push(mem_idx);
             }
         }
+
+        assert!(
+            non_contiguously_indexed_array::check_segment_data_invariants(
+                &segments_idx_begin,
+                &segments_mem_idx_begin,
+                self.entries.len(),
+            )
+            .is_ok(),
+            "Segment data does not fulfill invariants!"
+        );
 
         let (struct_opening_str, struct_closing_str, array_opening_str, array_closing_str) =
             match build_config.output_format {

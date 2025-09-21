@@ -1,16 +1,19 @@
-use crate::{NciArrayIndexIter, NciIndex};
+use crate::{NciArrayIndexIter, NciArrayInvariant, NciIndex};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct NciArray<'a, I, V> {
     /// The user-defined index of the first element of each segment.
     /// Example: `segments_idx_begin[2] == 5` means the first element of the third segment has user-defined index 5.
+    #[doc(hidden)]
     pub segments_idx_begin: &'a [I],
 
     /// The memory index of the first element of each segment.
     /// Example: `segments_mem_idx_begin[2] = 3` means the first element of the third segment is stored in memory index 3.
+    #[doc(hidden)]
     pub segments_mem_idx_begin: &'a [usize],
 
     /// All the values stored in this array.
+    #[doc(hidden)]
     pub values: &'a [V],
 }
 
@@ -32,7 +35,45 @@ impl<I: NciIndex, V> core::ops::Index<I> for NciArray<'_, I, V> {
     }
 }
 
+impl<'a, I: NciIndex, V> NciArray<'a, I, V> {
+    /// Attempt to create a `NciArray` from the given raw parts.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` variant containing the first invariant found to be violated by the raw parts.
+    pub fn try_from_raw_parts(
+        segments_idx_begin: &'a [I],
+        segments_mem_idx_begin: &'a [usize],
+        values: &'a [V],
+    ) -> Result<Self, NciArrayInvariant> {
+        crate::check_segment_data_invariants(
+            segments_idx_begin,
+            segments_mem_idx_begin,
+            values.len(),
+        )
+        .map(|()| Self {
+            segments_idx_begin,
+            segments_mem_idx_begin,
+            values,
+        })
+    }
+}
+
 impl<I: NciIndex, V> NciArray<'_, I, V> {
+    /// Checks if the array fulfills all segment data invariants.
+    /// If `false` would be returned when called, running any other function has no guarantee to result in correct behaviour.
+    /// `NciArrayBuilder` checks the invariants during codegen, therefore guaranteeing that `NciArray`s generated using it are safe to use.
+    /// However, if the version of this crate is updated without regenerating the array, there is no longer a guarantee,
+    /// thererfore it is recommended to add tests with the assertion that this function returns `true`.
+    pub fn fulfills_invariants(&self) -> bool {
+        crate::check_segment_data_invariants(
+            self.segments_idx_begin,
+            self.segments_mem_idx_begin,
+            self.values.len(),
+        )
+        .is_ok()
+    }
+
     pub fn values(&self) -> impl ExactSizeIterator<Item = &V> {
         self.values.iter()
     }
