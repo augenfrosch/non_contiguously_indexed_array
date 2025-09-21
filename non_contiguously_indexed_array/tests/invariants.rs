@@ -308,9 +308,7 @@ fn custom_nci_index_distance_invariant_test() {
     struct ExtremelyOverestimatingIndex(u32);
     impl NciIndex for ExtremelyOverestimatingIndex {
         fn next(self) -> Option<Self> {
-            self.0
-                .checked_add(1)
-                .map(Self)
+            self.0.checked_add(1).map(Self)
         }
 
         fn distance(self, _other: Self) -> Option<usize> {
