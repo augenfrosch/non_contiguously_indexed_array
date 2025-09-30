@@ -165,7 +165,7 @@ impl Parse for Entries {
 }
 
 #[proc_macro]
-pub fn non_contiguously_indexed_array(input: TokenStream) -> TokenStream {
+pub fn nci_array(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as Entries).0;
 
     let mut segments_idx_begin_exprs = Vec::new();

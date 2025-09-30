@@ -1,5 +1,5 @@
 use non_contiguously_indexed_array::NciArray;
-use non_contiguously_indexed_array_macros::non_contiguously_indexed_array;
+use non_contiguously_indexed_array_macros::nci_array;
 
 // TODO: remove copy-paste; maybe a general test crate makes sense
 macro_rules! basic_array_test_normal_case {
@@ -22,14 +22,14 @@ macro_rules! basic_array_test_edge_case {
 
 #[test]
 fn basic_array_test_1() {
-    const ARRAY_1: NciArray<u32, u32> = non_contiguously_indexed_array!(
+    const ARRAY_1: NciArray<u32, u32> = nci_array! {
         0u32 => 0,
         1u32 => 1,
         2u32 => 2,
         10u32 => 10,
         11u32 => 11,
         100u32 => 100,
-    );
+    };
 
     dbg!(ARRAY_1);
 
@@ -43,7 +43,7 @@ fn basic_array_test_1() {
 
 #[test]
 fn basic_array_test_4() {
-    pub const ARRAY_4: NciArray<i32, i32> = non_contiguously_indexed_array!(
+    pub const ARRAY_4: NciArray<i32, i32> = nci_array! {
         -500i32 => -500,
         -499i32 => -499,
         -2i32 => -2,
@@ -53,7 +53,7 @@ fn basic_array_test_4() {
         2i32 => 2,
         499i32 => 499,
         500i32 => 500,
-    );
+    };
 
     assert_eq!(ARRAY_4.segments_idx_begin.len(), 3);
     assert_eq!(ARRAY_4.segments_mem_idx_begin.len(), 3);
