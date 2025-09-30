@@ -2,6 +2,7 @@
 members = [
     "non_contiguously_indexed_array",
     "non_contiguously_indexed_array_builder",
+    "non_contiguously_indexed_array_macros",
 ]
 resolver = "3"
 

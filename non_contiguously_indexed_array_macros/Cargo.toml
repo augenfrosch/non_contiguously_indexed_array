@@ -1,0 +1,19 @@
+[package]
+name = "non_contiguously_indexed_array_macros"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+repository = "https://github.com/augenfrosch/non_contiguously_indexed_array"
+categories = ["data-structures"]
+
+[lints]
+workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+non_contiguously_indexed_array = { workspace = true }
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
