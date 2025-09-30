@@ -1,6 +1,6 @@
 [package]
-name = "non_contiguously_indexed_array_builder"
-version = "0.2.0"
+name = "non_contiguously_indexed_array_shared"
+version = "0.0.0"
 edition.workspace = true
 license.workspace = true
 readme.workspace = true
@@ -12,9 +12,3 @@ workspace = true
 
 [lib]
 crate-type = ["rlib"]
-
-[dependencies]
-non_contiguously_indexed_array_shared = { workspace = true }
-
-[dev-dependencies]
-non_contiguously_indexed_array = { workspace = true }

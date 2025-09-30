@@ -1,6 +1,6 @@
 [package]
 name = "non_contiguously_indexed_array"
-version = "0.4.1"
+version = "0.4.2"
 edition.workspace = true
 license.workspace = true
 readme.workspace = true
@@ -12,3 +12,11 @@ workspace = true
 
 [lib]
 crate-type = ["rlib"]
+
+[dependencies]
+non_contiguously_indexed_array_macros = { workspace = true, optional = true }
+non_contiguously_indexed_array_shared = { workspace = true }
+
+[features]
+default = []
+macros = ["dep:non_contiguously_indexed_array_macros"]

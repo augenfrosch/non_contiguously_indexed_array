@@ -1,4 +1,4 @@
-use non_contiguously_indexed_array::NciIndex;
+use non_contiguously_indexed_array_shared::NciIndex;
 
 pub struct NciArrayBuilder<I: NciIndex, V> {
     entries: Vec<(I, V)>,

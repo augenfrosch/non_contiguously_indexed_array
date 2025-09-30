@@ -12,8 +12,10 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [workspace.dependencies]
-non_contiguously_indexed_array = { version = "0.4.1", path = "non_contiguously_indexed_array", default-features = false}
+non_contiguously_indexed_array = { version = "0.4.2", path = "non_contiguously_indexed_array", default-features = false}
 non_contiguously_indexed_array_builder = { version = "0.2.0", path = "non_contiguously_indexed_array_builder", default-features = false }
+non_contiguously_indexed_array_macros = { version = "0.0.0", path = "non_contiguously_indexed_array_macros", default-features = false }
+non_contiguously_indexed_array_shared = { version = "0.0.0", path = "non_contiguously_indexed_array_shared", default-features = false }
 
 [workspace.lints]
 clippy.assigning_clones = "warn"

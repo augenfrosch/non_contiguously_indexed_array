@@ -1,6 +1,6 @@
 // Implementation is based on `phf_macros`
 
-use non_contiguously_indexed_array::NciIndex;
+use non_contiguously_indexed_array_shared::NciIndex;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
