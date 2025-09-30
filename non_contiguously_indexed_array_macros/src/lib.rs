@@ -134,7 +134,7 @@ struct Entry {
 }
 
 impl Parse for Entry {
-    fn parse(input: ParseStream<'_>) -> Result<Entry> {
+    fn parse(input: ParseStream<'_>) -> Result<Self> {
         let attrs = input.call(syn::Attribute::parse_outer)?;
         if !attrs.is_empty() {
             return Err(syn::Error::new(
@@ -146,7 +146,7 @@ impl Parse for Entry {
         let index = input.parse()?;
         input.parse::<Token![=>]>()?;
         let value = input.parse()?;
-        Ok(Entry {
+        Ok(Self {
             index,
             value,
             // attrs,

@@ -31,8 +31,6 @@ fn basic_array_test_1() {
         100u32 => 100,
     };
 
-    dbg!(ARRAY_1);
-
     assert_eq!(ARRAY_1.segments_idx_begin.len(), 3);
     assert_eq!(ARRAY_1.segments_mem_idx_begin.len(), 3);
     assert_eq!(ARRAY_1.values.len(), 6);
