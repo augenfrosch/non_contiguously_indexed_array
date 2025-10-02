@@ -19,39 +19,27 @@ impl TryFrom<&Expr> for Integer {
     fn try_from(value: &Expr) -> Result<Self> {
         match value {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
-                syn::Lit::Byte(lit_byte) => Ok(Self::NonNegative(lit_byte.value().into())),
-                syn::Lit::Int(lit_int) => Ok(Self::NonNegative(lit_int.base10_parse::<u128>()?)),
-                _ => Err(syn::Error::new(
-                    expr_lit.span(),
-                    "Unsupported literal! Must be a byte or integer literal.",
-                )),
+                syn::Lit::Byte(lit_byte) => return Ok(Self::NonNegative(lit_byte.value().into())),
+                syn::Lit::Int(lit_int) => {
+                    return Ok(Self::NonNegative(lit_int.base10_parse::<u128>()?));
+                }
+                _ => {}
             },
-            Expr::Unary(expr_unary) => match &expr_unary.op {
-                syn::UnOp::Neg(minus) => match &*expr_unary.expr {
-                    Expr::Lit(expr_lit) => match &expr_lit.lit {
-                        syn::Lit::Int(lit_int) => {
-                            Ok(Self::Negative(lit_int.base10_parse::<u128>()?))
-                        }
-                        _ => Err(syn::Error::new(
-                            expr_lit.span(),
-                            "Unsupported literal! Literal must be for an integer.",
-                        )),
-                    },
-                    _ => Err(syn::Error::new(
-                        minus.span(),
-                        "Unsupported unary expression! Only negation of integer literals is allowed.",
-                    )),
-                },
-                _ => Err(syn::Error::new(
-                    expr_unary.span(),
-                    "Unsupported unary operator! Only negation, `-`, is allowed.",
-                )),
-            },
-            _ => Err(syn::Error::new(
-                value.span(),
-                "Unsupported expression! Expression must be an integer literal or a negated signed integer literal.",
-            )),
+            Expr::Unary(expr_unary) => {
+                if let syn::UnOp::Neg(_minus) = &expr_unary.op
+                    && let Expr::Lit(expr_lit) = &*expr_unary.expr
+                    && let syn::Lit::Int(lit_int) = &expr_lit.lit
+                {
+                    return Ok(Self::Negative(lit_int.base10_parse::<u128>()?));
+                }
+            }
+            _ => {}
         }
+
+        Err(syn::Error::new(
+            value.span(),
+            "Unsupported expression! Expression must be a byte literal, an integer literal, or a negated signed integer literal.",
+        ))
     }
 }
 
