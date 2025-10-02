@@ -50,12 +50,9 @@ impl non_contiguously_indexed_array_shared::NciIndex for Integer {
         }
     }
 
-    fn distance(self, other: Self) -> Option<usize> {
-        match (self, other) {
-            (Self::Negative(l0), Self::Negative(r0))
-            | (Self::NonNegative(l0), Self::NonNegative(r0)) => l0.abs_diff(r0).try_into().ok(),
-            (Self::Negative(l0), Self::NonNegative(r0))
-            | (Self::NonNegative(l0), Self::Negative(r0)) => l0.checked_add(r0)?.try_into().ok(),
-        }
+    fn distance(self, _other: Self) -> Option<usize> {
+        unimplemented!(
+            "`NciIndex::next` is used to detect new segments. Size of host architecture's `usize` might differ from target."
+        )
     }
 }

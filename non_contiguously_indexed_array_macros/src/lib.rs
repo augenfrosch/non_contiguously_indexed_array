@@ -131,11 +131,7 @@ pub fn nci_array(input: TokenStream) -> TokenStream {
                 }
                 std::cmp::Ordering::Greater => {}
             }
-            previous_entry
-                .index
-                .value
-                .distance(current_entry.index.value)
-                != Some(1)
+            previous_entry.index.value.next() != Some(current_entry.index.value)
         };
         if new_segment {
             let index_expr = &input[mem_idx].index.expr;
