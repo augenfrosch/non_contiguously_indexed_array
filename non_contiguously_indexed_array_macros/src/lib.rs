@@ -155,13 +155,13 @@ pub fn nci_array(input: TokenStream) -> TokenStream {
         quote!({
             struct S<T>(T);
             impl<T> S<T> {
-                const fn c(self, _: &T) -> Self {
+                const fn check_types(self, _: &[T]) -> Self {
                     self
                 }
             }
             #[deny(overflowing_literals)]
             ::non_contiguously_indexed_array::NciArray {
-                segments_idx_begin: &[S(#segments_first_idx_begin_expr)#(.c(&#index_exprs))*.0, #(#segments_idx_begin_exprs),*],
+                segments_idx_begin: &[S(#segments_first_idx_begin_expr).check_types(&[#(#index_exprs),*]).0, #(#segments_idx_begin_exprs),*],
                 segments_mem_idx_begin: &[#(#segments_mem_idx_begin),*],
                 values: &[#(#values_exprs),*],
             }
