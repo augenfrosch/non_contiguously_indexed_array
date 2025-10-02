@@ -44,24 +44,18 @@ impl non_contiguously_indexed_array_shared::NciIndex for Integer {
             Self::Negative(value) => Some(
                 value
                     .checked_sub(1)
-                    .map_or(Self::NonNegative(1), |new_value| Self::Negative(new_value)),
+                    .map_or(Self::NonNegative(1), Self::Negative),
             ),
-            Self::NonNegative(value) => value
-                .checked_add(1)
-                .map(|new_value| Self::NonNegative(new_value)),
+            Self::NonNegative(value) => value.checked_add(1).map(Self::NonNegative),
         }
     }
 
     fn distance(self, other: Self) -> Option<usize> {
         match (self, other) {
-            (Integer::Negative(l0), Integer::Negative(r0))
-            | (Integer::NonNegative(l0), Integer::NonNegative(r0)) => {
-                l0.abs_diff(r0).try_into().ok()
-            }
-            (Integer::Negative(l0), Integer::NonNegative(r0))
-            | (Integer::NonNegative(l0), Integer::Negative(r0)) => {
-                l0.checked_add(r0)?.try_into().ok()
-            }
+            (Self::Negative(l0), Self::Negative(r0))
+            | (Self::NonNegative(l0), Self::NonNegative(r0)) => l0.abs_diff(r0).try_into().ok(),
+            (Self::Negative(l0), Self::NonNegative(r0))
+            | (Self::NonNegative(l0), Self::Negative(r0)) => l0.checked_add(r0)?.try_into().ok(),
         }
     }
 }
