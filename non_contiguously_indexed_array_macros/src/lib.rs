@@ -19,7 +19,7 @@ impl TryFrom<&Expr> for Integer {
     fn try_from(value: &Expr) -> Result<Self> {
         match value {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
-                syn::Lit::Byte(lit_byte) => Ok(Self::NonNegative(lit_byte.value() as u128)),
+                syn::Lit::Byte(lit_byte) => Ok(Self::NonNegative(lit_byte.value().into())),
                 syn::Lit::Int(lit_int) => Ok(Self::NonNegative(lit_int.base10_parse::<u128>()?)),
                 _ => Err(syn::Error::new(
                     expr_lit.span(),
