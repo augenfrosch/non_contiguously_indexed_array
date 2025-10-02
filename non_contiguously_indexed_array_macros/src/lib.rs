@@ -40,12 +40,12 @@ impl TryFrom<&Expr> for Integer {
         match value {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
                 syn::Lit::Int(lit_int) => match lit_int.suffix() {
-                    "i8" => Ok(Self::I8(lit_int.base10_parse::<i8>()?)),
-                    "i16" => Ok(Self::I16(lit_int.base10_parse::<i16>()?)),
-                    "i32" => Ok(Self::I32(lit_int.base10_parse::<i32>()?)),
-                    "i64" => Ok(Self::I64(lit_int.base10_parse::<i64>()?)),
-                    "i128" => Ok(Self::I128(lit_int.base10_parse::<i128>()?)),
-                    "isize" => Ok(Self::Isize(lit_int.base10_parse::<isize>()?)),
+                    "i8" => Ok(Self::I8(lit_int.base10_parse::<u8>()? as i8)),
+                    "i16" => Ok(Self::I16(lit_int.base10_parse::<u16>()? as i16)),
+                    "i32" => Ok(Self::I32(lit_int.base10_parse::<u32>()? as i32)),
+                    "i64" => Ok(Self::I64(lit_int.base10_parse::<u64>()? as i64)),
+                    "i128" => Ok(Self::I128(lit_int.base10_parse::<u128>()? as i128)),
+                    "isize" => Ok(Self::Isize(lit_int.base10_parse::<usize>()? as isize)),
                     "u8" => Ok(Self::U8(lit_int.base10_parse::<u8>()?)),
                     "u16" => Ok(Self::U16(lit_int.base10_parse::<u16>()?)),
                     "u32" => Ok(Self::U32(lit_int.base10_parse::<u32>()?)),
