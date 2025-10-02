@@ -19,19 +19,8 @@ impl TryFrom<&Expr> for Integer {
     fn try_from(value: &Expr) -> Result<Self> {
         match value {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
-                syn::Lit::Byte(lit_byte) => Ok(Self::from(lit_byte.value())),
-                syn::Lit::Int(lit_int) => match lit_int.suffix() {
-                    "i8" => Ok(Self::from(lit_int.base10_parse::<u8>()? as i8)), // TODO: Check if this can be simplified; overflowing literals are also probably not working correctly if no suffix is present
-                    "i16" => Ok(Self::from(lit_int.base10_parse::<u16>()? as i16)),
-                    "i32" => Ok(Self::from(lit_int.base10_parse::<u32>()? as i32)),
-                    "i64" => Ok(Self::from(lit_int.base10_parse::<u64>()? as i64)),
-                    "i128" => Ok(Self::from(lit_int.base10_parse::<u128>()? as i128)),
-                    "isize" => Ok(Self::from(lit_int.base10_parse::<usize>()? as isize)),
-                    "u8" | "u16" | "u32" | "u64" | "u128" | "usize" | "" => {
-                        Ok(Self::from(lit_int.base10_parse::<u128>()?))
-                    }
-                    _ => Err(syn::Error::new(lit_int.span(), "Unsupported suffix!")),
-                },
+                syn::Lit::Byte(lit_byte) => Ok(Self::NonNegative(lit_byte.value() as u128)),
+                syn::Lit::Int(lit_int) => Ok(Self::NonNegative(lit_int.base10_parse::<u128>()?)),
                 _ => Err(syn::Error::new(
                     expr_lit.span(),
                     "Unsupported literal! Must be a byte or integer literal.",
@@ -40,12 +29,9 @@ impl TryFrom<&Expr> for Integer {
             Expr::Unary(expr_unary) => match &expr_unary.op {
                 syn::UnOp::Neg(minus) => match &*expr_unary.expr {
                     Expr::Lit(expr_lit) => match &expr_lit.lit {
-                        syn::Lit::Int(lit_int) => match lit_int.suffix() {
-                            "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "" => {
-                                Ok(Self::Negative(lit_int.base10_parse::<u128>()?))
-                            }
-                            _ => Err(syn::Error::new(lit_int.span(), "Unsupported suffix!")),
-                        },
+                        syn::Lit::Int(lit_int) => {
+                            Ok(Self::Negative(lit_int.base10_parse::<u128>()?))
+                        }
                         _ => Err(syn::Error::new(
                             expr_lit.span(),
                             "Unsupported literal! Literal must be for an integer.",
@@ -173,6 +159,7 @@ pub fn nci_array(input: TokenStream) -> TokenStream {
                     self
                 }
             }
+            #[deny(overflowing_literals)]
             ::non_contiguously_indexed_array::NciArray {
                 segments_idx_begin: &[S(#segments_first_idx_begin_expr)#(.c(&#index_exprs))*.0, #(#segments_idx_begin_exprs),*],
                 segments_mem_idx_begin: &[#(#segments_mem_idx_begin),*],
