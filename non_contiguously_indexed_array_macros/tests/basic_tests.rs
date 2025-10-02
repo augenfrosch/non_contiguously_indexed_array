@@ -23,12 +23,12 @@ macro_rules! basic_array_test_edge_case {
 #[test]
 fn basic_array_test_1() {
     const ARRAY_1: NciArray<u32, u32> = nci_array! {
-        0u32 => 0,
-        1u32 => 1,
-        2u32 => 2,
-        10u32 => 10,
-        11u32 => 11,
-        100u32 => 100,
+        0 => 0,
+        1 => 1,
+        2 => 2,
+        10 => 10,
+        11 => 11,
+        100 => 100,
     };
 
     assert_eq!(ARRAY_1.segments_idx_begin.len(), 3);
@@ -42,15 +42,15 @@ fn basic_array_test_1() {
 #[test]
 fn basic_array_test_4() {
     pub const ARRAY_4: NciArray<i32, i32> = nci_array! {
-        -500i32 => -500,
-        -499i32 => -499,
-        -2i32 => -2,
-        -1i32 => -1,
-        0i32 => 0,
-        1i32 => 1,
-        2i32 => 2,
-        499i32 => 499,
-        500i32 => 500,
+        -500 => -500,
+        -499 => -499,
+        -2 => -2,
+        -1 => -1,
+        0 => 0,
+        1 => 1,
+        2 => 2,
+        499 => 499,
+        500 => 500,
     };
 
     assert_eq!(ARRAY_4.segments_idx_begin.len(), 3);
