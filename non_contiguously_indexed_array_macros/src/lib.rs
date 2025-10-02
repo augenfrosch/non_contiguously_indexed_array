@@ -39,6 +39,7 @@ impl TryFrom<&Expr> for Integer {
 
         match value {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
+                syn::Lit::Byte(lit_byte) => Ok(Self::U8(lit_byte.value())),
                 syn::Lit::Int(lit_int) => match lit_int.suffix() {
                     "i8" => Ok(Self::I8(lit_int.base10_parse::<u8>()? as i8)),
                     "i16" => Ok(Self::I16(lit_int.base10_parse::<u16>()? as i16)),
@@ -54,12 +55,12 @@ impl TryFrom<&Expr> for Integer {
                     "usize" => Ok(Self::Usize(lit_int.base10_parse::<usize>()?)),
                     _ => Err(syn::Error::new(
                         lit_int.span(),
-                        "Unsupported literal! Literal must have a valid type suffix, e.g., `128u32`.",
+                        "Unsupported literal! Must be a byte literal or have an integer literal with a valid type suffix, e.g., `128u32`.",
                     )),
                 },
                 _ => Err(syn::Error::new(
                     expr_lit.span(),
-                    "Unsupported literal! Literal must be for an integer.",
+                    "Unsupported literal! Must be a byte or integer literal.",
                 )),
             },
             Expr::Unary(expr_unary) => match &expr_unary.op {
